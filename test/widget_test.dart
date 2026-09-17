@@ -40,9 +40,10 @@ void main() {
       // Six of a Kind
       expect(YatzyScorer.calculateScore(YatzyCategory.sixOfAKind, [7, 7, 7, 7, 7, 7, 2]), 42);
 
-      // Yatzy (50p) vs Super Yatzy (75p)
-      expect(YatzyScorer.calculateScore(YatzyCategory.yatzy, [8, 8, 8, 8, 8, 8]), 50);
-      expect(YatzyScorer.calculateScore(YatzyCategory.superYatzy, [8, 8, 8, 8, 8, 8]), 75);
+      // Yatzy (50p on 5xd6, 120p on 6xd8 scaled) vs Super Yatzy (75p on 5xd6, 180p on 6xd8 scaled)
+      expect(YatzyScorer.calculateScore(YatzyCategory.yatzy, [6, 6, 6, 6, 6]), 50);
+      expect(YatzyScorer.calculateScore(YatzyCategory.yatzy, [8, 8, 8, 8, 8, 8]), 120);
+      expect(YatzyScorer.calculateScore(YatzyCategory.superYatzy, [8, 8, 8, 8, 8, 8]), 180);
     });
     test('4-Dice Mini-Yatzy scoring (Par=2 in upper section, 4-dice straights, 4-of-a-kind Yatzy)', () {
       // Par = 2 for 4 dice
@@ -147,7 +148,60 @@ void main() {
           expect(s.variantSpecsBadge(variant).isNotEmpty, true);
           expect(s.variantExplanation(variant).isNotEmpty, true);
         }
+        expect(s.scalePointsSettingLabel.isNotEmpty, true);
+        expect(s.scalePointsOptionLabel(true).isNotEmpty, true);
+        expect(s.scalePointsOptionLabel(false).isNotEmpty, true);
       }
+    });
+
+    test('Dynamic point scaling scales Upper Bonus, Yatzy, and Straights appropriately', () {
+      // Classic 5xd6 EU
+      final classic = YatzyGameRules.fromVariant(YatzyGameVariant.classic5Dice);
+      expect(classic.upperBonusPoints, 50);
+      expect(classic.yatzyBasePoints, 50);
+      expect(classic.superYatzyBasePoints, 75);
+
+      // d4 Pyramid (4xd4, Par=2) -> scaled vs fixed
+      final d4Scaled = YatzyGameRules.fromVariant(
+        YatzyGameVariant.mini4Dice,
+        customDieSides: 4,
+        customScalePointsWithDice: true,
+      );
+      expect(d4Scaled.upperBonusPoints, 15);
+      expect(d4Scaled.yatzyBasePoints, 30);
+
+      final d4Fixed = YatzyGameRules.fromVariant(
+        YatzyGameVariant.mini4Dice,
+        customDieSides: 4,
+        customScalePointsWithDice: false,
+      );
+      expect(d4Fixed.upperBonusPoints, 50);
+      expect(d4Fixed.yatzyBasePoints, 50);
+
+      // d20 Hero (5xd20, Par=3) -> scaled vs fixed
+      final d20Scaled = YatzyGameRules.fromVariant(
+        YatzyGameVariant.rpgD20,
+        customScalePointsWithDice: true,
+      );
+      expect(d20Scaled.upperBonusPoints, 180);
+      expect(d20Scaled.yatzyBasePoints, 170);
+      expect(
+        YatzyScorer.calculateScore(
+          YatzyCategory.yatzy,
+          [20, 20, 20, 20, 20],
+          rules: d20Scaled,
+        ),
+        170,
+      );
+      // Small straight 16-17-18-19-20 on d20 scores sum of 16+17+18+19+20 = 90
+      expect(
+        YatzyScorer.calculateScore(
+          YatzyCategory.smallStraight,
+          [16, 17, 18, 19, 20],
+          rules: d20Scaled,
+        ),
+        90,
+      );
     });
   });
 

@@ -24,6 +24,7 @@ class YatzyGameRules {
   final int upperParCount; // 2, 3, or 4 of a kind
   final bool includeMaxiCategories;
   final bool includeMegaCategories;
+  final bool scalePointsWithDice;
 
   const YatzyGameRules({
     this.variant = YatzyGameVariant.classic5Dice,
@@ -34,6 +35,7 @@ class YatzyGameRules {
     this.upperParCount = 3,
     this.includeMaxiCategories = false,
     this.includeMegaCategories = false,
+    this.scalePointsWithDice = true,
   });
 
   factory YatzyGameRules.fromVariant(
@@ -43,7 +45,9 @@ class YatzyGameRules {
     int? customMaxRolls,
     int? customDiceCount,
     int? customDieSides,
+    bool? customScalePointsWithDice,
   }) {
+    final scale = customScalePointsWithDice ?? true;
     switch (variant) {
       case YatzyGameVariant.mini4Dice:
         return YatzyGameRules(
@@ -55,6 +59,7 @@ class YatzyGameRules {
           upperParCount: customUpperParCount ?? 2,
           includeMaxiCategories: false,
           includeMegaCategories: false,
+          scalePointsWithDice: scale,
         );
       case YatzyGameVariant.classic5Dice:
         return YatzyGameRules(
@@ -66,6 +71,7 @@ class YatzyGameRules {
           upperParCount: customUpperParCount ?? 3,
           includeMaxiCategories: false,
           includeMegaCategories: false,
+          scalePointsWithDice: scale,
         );
       case YatzyGameVariant.usYahtzee:
         return YatzyGameRules(
@@ -77,6 +83,7 @@ class YatzyGameRules {
           upperParCount: customUpperParCount ?? 3,
           includeMaxiCategories: false,
           includeMegaCategories: false,
+          scalePointsWithDice: scale,
         );
       case YatzyGameVariant.maxi6Dice:
         return YatzyGameRules(
@@ -88,6 +95,7 @@ class YatzyGameRules {
           upperParCount: customUpperParCount ?? 3,
           includeMaxiCategories: true,
           includeMegaCategories: false,
+          scalePointsWithDice: scale,
         );
       case YatzyGameVariant.mega7Dice:
         return YatzyGameRules(
@@ -99,6 +107,7 @@ class YatzyGameRules {
           upperParCount: customUpperParCount ?? 3,
           includeMaxiCategories: true,
           includeMegaCategories: true,
+          scalePointsWithDice: scale,
         );
       case YatzyGameVariant.d8Fantasy:
         return YatzyGameRules(
@@ -110,6 +119,7 @@ class YatzyGameRules {
           upperParCount: customUpperParCount ?? 3,
           includeMaxiCategories: true,
           includeMegaCategories: true,
+          scalePointsWithDice: scale,
         );
       case YatzyGameVariant.rpgD20:
         return YatzyGameRules(
@@ -121,6 +131,7 @@ class YatzyGameRules {
           upperParCount: customUpperParCount ?? 3,
           includeMaxiCategories: false,
           includeMegaCategories: true,
+          scalePointsWithDice: scale,
         );
       case YatzyGameVariant.turbo4Rolls:
         return YatzyGameRules(
@@ -132,6 +143,7 @@ class YatzyGameRules {
           upperParCount: customUpperParCount ?? 3,
           includeMaxiCategories: true,
           includeMegaCategories: true,
+          scalePointsWithDice: scale,
         );
       case YatzyGameVariant.oneShotHardcore:
         return YatzyGameRules(
@@ -140,9 +152,10 @@ class YatzyGameRules {
           diceCount: customDiceCount ?? 5,
           dieSides: customDieSides ?? 6,
           maxRolls: customMaxRolls ?? 1,
-          upperParCount: customUpperParCount ?? 3,
+          upperParCount: customUpperParCount ?? 2,
           includeMaxiCategories: false,
           includeMegaCategories: false,
+          scalePointsWithDice: scale,
         );
     }
   }
@@ -156,6 +169,7 @@ class YatzyGameRules {
     int? upperParCount,
     bool? includeMaxiCategories,
     bool? includeMegaCategories,
+    bool? scalePointsWithDice,
   }) {
     return YatzyGameRules(
       variant: variant ?? this.variant,
@@ -168,6 +182,7 @@ class YatzyGameRules {
           includeMaxiCategories ?? this.includeMaxiCategories,
       includeMegaCategories:
           includeMegaCategories ?? this.includeMegaCategories,
+      scalePointsWithDice: scalePointsWithDice ?? this.scalePointsWithDice,
     );
   }
 
@@ -232,9 +247,54 @@ class YatzyGameRules {
   /// Total par points in the upper section (e.g. 63 for 3×d6, 84 for 4×d6, 108 for 3×d8).
   int get upperParTotal => upperParCount * sumOfUpperFaces;
 
-  /// Upper section bonus points (+50 for EU Scandinavian, +35 for US Yahtzee).
-  int get upperBonusPoints =>
-      region == YatzyRuleRegion.usYahtzee ? 35 : 50;
+  /// Upper section bonus points (+50 classic EU / +35 classic US, or scaled relative to upperParTotal).
+  int get upperBonusPoints {
+    if (!scalePointsWithDice || (dieSides == 6 && upperParCount == 3)) {
+      return region == YatzyRuleRegion.usYahtzee ? 35 : 50;
+    }
+    final ratio =
+        region == YatzyRuleRegion.usYahtzee ? (35.0 / 63.0) : (50.0 / 63.0);
+    return ((upperParTotal * ratio / 5.0).round() * 5).clamp(15, 500);
+  }
+
+  /// Points awarded for Yatzy (all dice showing same face).
+  int get yatzyBasePoints {
+    if (!scalePointsWithDice) {
+      return diceCount >= 6 ? 100 : 50;
+    }
+    if (dieSides == 6) {
+      return diceCount >= 6 ? 100 : 50;
+    }
+    final maxRoll = diceCount * dieSides;
+    final multiplier = diceCount >= 6 ? 2.5 : 1.7;
+    return ((maxRoll * multiplier / 10.0).round() * 10).clamp(30, 500);
+  }
+
+  /// Points awarded for Super Yatzy (7 or 8 matching dice).
+  int get superYatzyBasePoints {
+    if (!scalePointsWithDice) {
+      return 75;
+    }
+    if (dieSides == 6 && diceCount <= 6) {
+      return 75;
+    }
+    return ((yatzyBasePoints * 1.5 / 10.0).round() * 10).clamp(75, 750);
+  }
+
+  /// US Yahtzee fixed Full House points (25 classic, or scaled with dieSides).
+  int get usFullHousePoints => !scalePointsWithDice || dieSides == 6
+      ? 25
+      : ((25 * dieSides / 6.0 / 5.0).round() * 5).clamp(15, 250);
+
+  /// US Yahtzee fixed Small Straight points (30 classic, or scaled with dieSides).
+  int get usSmallStraightPoints => !scalePointsWithDice || dieSides == 6
+      ? 30
+      : ((30 * dieSides / 6.0 / 5.0).round() * 5).clamp(20, 300);
+
+  /// US Yahtzee fixed Large Straight points (40 classic, or scaled with dieSides).
+  int get usLargeStraightPoints => !scalePointsWithDice || dieSides == 6
+      ? 40
+      : ((40 * dieSides / 6.0 / 5.0).round() * 5).clamp(25, 400);
 }
 
 enum YatzyCategory {
@@ -461,18 +521,35 @@ class YatzyScorer {
     List<int> dice, {
     int upperParCount = 3,
     YatzyRuleRegion region = YatzyRuleRegion.euScandinavian,
+    YatzyGameRules? rules,
   }) {
+    final maxFace =
+        dice.isEmpty ? 6 : dice.fold<int>(6, (m, d) => d > m ? d : m);
+    final effectiveRules = rules ??
+        YatzyGameRules(
+          diceCount: dice.isEmpty ? 5 : dice.length,
+          dieSides: maxFace > 12
+              ? 20
+              : (maxFace > 10
+                  ? 12
+                  : (maxFace > 8 ? 10 : (maxFace > 6 ? 8 : 6))),
+          upperParCount: upperParCount,
+          region: region,
+          scalePointsWithDice: true,
+        );
+    final effectivePar = effectiveRules.upperParCount;
+    final effectiveRegion = effectiveRules.region;
+
     final counts = <int, int>{};
     for (final d in dice) {
       counts[d] = (counts[d] ?? 0) + 1;
     }
 
     if (category.isUpper) {
-      final face = category.upperFace!;
-      final count = counts[face] ?? 0;
-      final rawPoints = count * face;
-      final parPoints = upperParCount * face;
-      return rawPoints - parPoints;
+      final targetFace = category.upperFace!;
+      final matchingSum = (counts[targetFace] ?? 0) * targetFace;
+      final parScore = effectivePar * targetFace;
+      return matchingSum - parScore;
     }
 
     switch (category) {
@@ -511,7 +588,7 @@ class YatzyScorer {
       case YatzyCategory.threeOfAKind:
         for (int face = 20; face >= 1; face--) {
           if ((counts[face] ?? 0) >= 3) {
-            if (region == YatzyRuleRegion.usYahtzee) {
+            if (effectiveRegion == YatzyRuleRegion.usYahtzee) {
               return dice.fold(0, (sum, d) => sum + d);
             }
             return face * 3;
@@ -522,7 +599,7 @@ class YatzyScorer {
       case YatzyCategory.fourOfAKind:
         for (int face = 20; face >= 1; face--) {
           if ((counts[face] ?? 0) >= 4) {
-            if (region == YatzyRuleRegion.usYahtzee) {
+            if (effectiveRegion == YatzyRuleRegion.usYahtzee) {
               return dice.fold(0, (sum, d) => sum + d);
             }
             return face * 4;
@@ -548,39 +625,51 @@ class YatzyScorer {
 
       case YatzyCategory.smallStraight:
         if (dice.length == 3) {
-          for (int start = 1; start <= 18; start++) {
+          for (int start = 18; start >= 1; start--) {
             if ((counts[start] ?? 0) >= 1 &&
                 (counts[start + 1] ?? 0) >= 1 &&
                 (counts[start + 2] ?? 0) >= 1) {
-              return 12;
+              return effectiveRules.scalePointsWithDice &&
+                      effectiveRules.dieSides != 6
+                  ? (start * 3 + 3)
+                  : 12;
             }
           }
           return 0;
         }
-        if (region == YatzyRuleRegion.usYahtzee) {
-          // US Yahtzee Small Straight: any 4 consecutive faces = 30 points
-          for (int start = 1; start <= 17; start++) {
+        if (effectiveRegion == YatzyRuleRegion.usYahtzee) {
+          // US Yahtzee Small Straight: any 4 consecutive faces
+          for (int start = 17; start >= 1; start--) {
             if ((counts[start] ?? 0) >= 1 &&
                 (counts[start + 1] ?? 0) >= 1 &&
                 (counts[start + 2] ?? 0) >= 1 &&
                 (counts[start + 3] ?? 0) >= 1) {
-              return 30;
+              return effectiveRules.usSmallStraightPoints;
             }
           }
           return 0;
         }
         if (dice.length == 4) {
-          if ((counts[1] ?? 0) >= 1 &&
-              (counts[2] ?? 0) >= 1 &&
-              (counts[3] ?? 0) >= 1 &&
-              (counts[4] ?? 0) >= 1) {
-            return 10;
+          for (int start = 17; start >= 1; start--) {
+            if ((counts[start] ?? 0) >= 1 &&
+                (counts[start + 1] ?? 0) >= 1 &&
+                (counts[start + 2] ?? 0) >= 1 &&
+                (counts[start + 3] ?? 0) >= 1) {
+              return start * 4 + 6;
+            }
           }
-          if ((counts[2] ?? 0) >= 1 &&
-              (counts[3] ?? 0) >= 1 &&
-              (counts[4] ?? 0) >= 1 &&
-              (counts[5] ?? 0) >= 1) {
-            return 14;
+          return 0;
+        }
+        if (effectiveRules.scalePointsWithDice &&
+            effectiveRules.dieSides > 6) {
+          for (int start = 16; start >= 1; start--) {
+            if ((counts[start] ?? 0) >= 1 &&
+                (counts[start + 1] ?? 0) >= 1 &&
+                (counts[start + 2] ?? 0) >= 1 &&
+                (counts[start + 3] ?? 0) >= 1 &&
+                (counts[start + 4] ?? 0) >= 1) {
+              return start * 5 + 10;
+            }
           }
           return 0;
         }
@@ -594,31 +683,27 @@ class YatzyScorer {
         return 0;
 
       case YatzyCategory.largeStraight:
-        if (region == YatzyRuleRegion.usYahtzee) {
-          // US Yahtzee Large Straight: any 5 consecutive faces = 40 points
-          for (int start = 1; start <= 16; start++) {
+        if (effectiveRegion == YatzyRuleRegion.usYahtzee) {
+          // US Yahtzee Large Straight: any 5 consecutive faces
+          for (int start = 16; start >= 1; start--) {
             if ((counts[start] ?? 0) >= 1 &&
                 (counts[start + 1] ?? 0) >= 1 &&
                 (counts[start + 2] ?? 0) >= 1 &&
                 (counts[start + 3] ?? 0) >= 1 &&
                 (counts[start + 4] ?? 0) >= 1) {
-              return 40;
+              return effectiveRules.usLargeStraightPoints;
             }
           }
           return 0;
         }
         if (dice.length == 4) {
-          if ((counts[3] ?? 0) >= 1 &&
-              (counts[4] ?? 0) >= 1 &&
-              (counts[5] ?? 0) >= 1 &&
-              (counts[6] ?? 0) >= 1) {
-            return 18;
-          }
-          if ((counts[2] ?? 0) >= 1 &&
-              (counts[3] ?? 0) >= 1 &&
-              (counts[4] ?? 0) >= 1 &&
-              (counts[5] ?? 0) >= 1) {
-            return 14;
+          for (int start = 17; start >= 2; start--) {
+            if ((counts[start] ?? 0) >= 1 &&
+                (counts[start + 1] ?? 0) >= 1 &&
+                (counts[start + 2] ?? 0) >= 1 &&
+                (counts[start + 3] ?? 0) >= 1) {
+              return start * 4 + 6;
+            }
           }
           return 0;
         }
@@ -635,18 +720,22 @@ class YatzyScorer {
         return 0;
 
       case YatzyCategory.fullStraight:
-        if ((counts[1] ?? 0) >= 1 &&
-            (counts[2] ?? 0) >= 1 &&
-            (counts[3] ?? 0) >= 1 &&
-            (counts[4] ?? 0) >= 1 &&
-            (counts[5] ?? 0) >= 1 &&
-            (counts[6] ?? 0) >= 1) {
-          return 21;
+        for (int start = 15; start >= 1; start--) {
+          if ((counts[start] ?? 0) >= 1 &&
+              (counts[start + 1] ?? 0) >= 1 &&
+              (counts[start + 2] ?? 0) >= 1 &&
+              (counts[start + 3] ?? 0) >= 1 &&
+              (counts[start + 4] ?? 0) >= 1 &&
+              (counts[start + 5] ?? 0) >= 1) {
+            return effectiveRules.scalePointsWithDice
+                ? (start * 6 + 15)
+                : 21;
+          }
         }
         return 0;
 
       case YatzyCategory.royalStraight:
-        // Any 6 consecutive faces -> 30 points
+        // Any 6 consecutive faces
         for (int start = 15; start >= 1; start--) {
           bool ok = true;
           for (int offset = 0; offset < 6; offset++) {
@@ -655,7 +744,12 @@ class YatzyScorer {
               break;
             }
           }
-          if (ok) return 30;
+          if (ok) {
+            if (!effectiveRules.scalePointsWithDice || start <= 3) {
+              return 30;
+            }
+            return (start * 6 + 15) + 9;
+          }
         }
         return 0;
 
@@ -665,8 +759,8 @@ class YatzyScorer {
           if ((counts[faceA] ?? 0) >= 3) {
             for (int faceB = 20; faceB >= 1; faceB--) {
               if (faceB != faceA && (counts[faceB] ?? 0) >= 2) {
-                if (region == YatzyRuleRegion.usYahtzee) {
-                  return 25;
+                if (effectiveRegion == YatzyRuleRegion.usYahtzee) {
+                  return effectiveRules.usFullHousePoints;
                 }
                 final sum = faceA * 3 + faceB * 2;
                 if (sum > best) best = sum;
@@ -739,13 +833,13 @@ class YatzyScorer {
 
       case YatzyCategory.yatzy:
         if (dice.isNotEmpty && counts.values.any((c) => c == dice.length)) {
-          return 50;
+          return effectiveRules.yatzyBasePoints;
         }
         return 0;
 
       case YatzyCategory.superYatzy:
         if (dice.isNotEmpty && counts.values.any((c) => c == dice.length)) {
-          return 75;
+          return effectiveRules.superYatzyBasePoints;
         }
         return 0;
 

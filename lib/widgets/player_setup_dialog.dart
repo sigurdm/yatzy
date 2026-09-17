@@ -35,6 +35,7 @@ class _PlayerSetupDialogState extends State<PlayerSetupDialog> {
   late int _selectedDieSides;
   late int _selectedMaxRolls;
   late int _selectedUpperParCount;
+  late bool _selectedScalePoints;
 
   @override
   void initState() {
@@ -48,6 +49,7 @@ class _PlayerSetupDialogState extends State<PlayerSetupDialog> {
     _selectedDieSides = widget.initialRules.dieSides;
     _selectedMaxRolls = widget.initialRules.maxRolls;
     _selectedUpperParCount = widget.initialRules.upperParCount;
+    _selectedScalePoints = widget.initialRules.scalePointsWithDice;
   }
 
   @override
@@ -67,6 +69,7 @@ class _PlayerSetupDialogState extends State<PlayerSetupDialog> {
       _selectedDieSides = preset.dieSides;
       _selectedMaxRolls = preset.maxRolls;
       _selectedUpperParCount = preset.upperParCount;
+      _selectedScalePoints = preset.scalePointsWithDice;
     });
   }
 
@@ -106,6 +109,7 @@ class _PlayerSetupDialogState extends State<PlayerSetupDialog> {
       customDieSides: _selectedDieSides,
       customMaxRolls: _selectedMaxRolls,
       customUpperParCount: _selectedUpperParCount,
+      customScalePointsWithDice: _selectedScalePoints,
     );
   }
 
@@ -118,11 +122,11 @@ class _PlayerSetupDialogState extends State<PlayerSetupDialog> {
         currentBuilt.diceCount != widget.initialRules.diceCount ||
         currentBuilt.dieSides != widget.initialRules.dieSides ||
         currentBuilt.maxRolls != widget.initialRules.maxRolls ||
-        currentBuilt.upperParCount != widget.initialRules.upperParCount;
+        currentBuilt.upperParCount != widget.initialRules.upperParCount ||
+        currentBuilt.scalePointsWithDice !=
+            widget.initialRules.scalePointsWithDice;
 
-    final sumOfFaces = _selectedDieSides == 20
-        ? 41
-        : (_selectedDieSides * (_selectedDieSides + 1)) ~/ 2;
+    final sumOfFaces = currentBuilt.sumOfUpperFaces;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -387,6 +391,57 @@ class _PlayerSetupDialogState extends State<PlayerSetupDialog> {
                           const SizedBox(width: 6),
                           Expanded(
                             child: _buildParOption(4, sumOfFaces, s),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // Point Scaling (Dynamic vs Classic Fixed)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            s.scalePointsSettingLabel,
+                            style: GoogleFonts.patrickHand(
+                              fontSize: 16.5,
+                              fontWeight: FontWeight.bold,
+                              color: PencilPalette.bluePencil,
+                            ),
+                          ),
+                          Text(
+                            'Bonus +${currentBuilt.upperBonusPoints}p • Yatzy ${currentBuilt.yatzyBasePoints}p',
+                            style: GoogleFonts.patrickHand(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.bold,
+                              color: PencilPalette.graphiteMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildChipChoice(
+                              label: s.scalePointsOptionLabel(true),
+                              selected: _selectedScalePoints,
+                              onTap: () => setState(() {
+                                _selectedScalePoints = true;
+                              }),
+                              seed: 681,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildChipChoice(
+                              label: s.scalePointsOptionLabel(false),
+                              selected: !_selectedScalePoints,
+                              onTap: () => setState(() {
+                                _selectedScalePoints = false;
+                              }),
+                              seed: 682,
+                            ),
                           ),
                         ],
                       ),

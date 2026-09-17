@@ -745,23 +745,24 @@ class AppStrings {
     required bool allUpperFilled,
     required bool canStillEarn,
     required int upperDiffSum,
+    int bonusPoints = 50,
   }) {
-    if (earned) return '+50';
+    if (earned) return '+$bonusPoints';
     if (allUpperFilled || !canStillEarn) return '0';
     if (upperDiffSum >= 0) {
       return _pick(
-        da: 'på vej (50)',
-        en: 'on track (50)',
-        sv: 'på väg (50)',
-        no: 'på vei (50)',
-        fi: 'tulossa (50)',
-        is_: 'á réttri leið (50)',
-        de: 'auf Kurs (50)',
-        nl: 'op koers (50)',
-        fr: 'en bonne voie (50)',
-        es: 'en camino (50)',
-        it: 'in linea (50)',
-        pl: 'na dobrej drodze (50)',
+        da: 'på vej ($bonusPoints)',
+        en: 'on track ($bonusPoints)',
+        sv: 'på väg ($bonusPoints)',
+        no: 'på vei ($bonusPoints)',
+        fi: 'tulossa ($bonusPoints)',
+        is_: 'á réttri leið ($bonusPoints)',
+        de: 'auf Kurs ($bonusPoints)',
+        nl: 'op koers ($bonusPoints)',
+        fr: 'en bonne voie ($bonusPoints)',
+        es: 'en camino ($bonusPoints)',
+        it: 'in linea ($bonusPoints)',
+        pl: 'na dobrej drodze ($bonusPoints)',
       );
     }
     final need = -upperDiffSum;
@@ -840,7 +841,7 @@ class AppStrings {
   }
 
   // Category names
-  String categoryLabel(YatzyCategory cat) {
+  String categoryLabel(YatzyCategory cat, {YatzyGameRules? rules}) {
     switch (cat) {
       case YatzyCategory.ones:
         return _pick(
@@ -1308,21 +1309,23 @@ class AppStrings {
           pl: 'Szansa',
         );
       case YatzyCategory.yatzy:
-        return 'Yatzy (50p)';
+        final pts = rules?.yatzyBasePoints ?? 50;
+        return 'Yatzy (${pts}p)';
       case YatzyCategory.superYatzy:
+        final pts = rules?.superYatzyBasePoints ?? 75;
         return _pick(
-          da: 'Super Yatzy (75p)',
-          en: 'Super Yatzy (75p)',
-          sv: 'Super Yatzy (75p)',
-          no: 'Super Yatzy (75p)',
-          fi: 'Super Yatzy (75p)',
-          is_: 'Ofur Yatzy (75p)',
-          de: 'Super Yatzy (75p)',
-          nl: 'Super Yatzy (75p)',
-          fr: 'Super Yatzy (75p)',
-          es: 'Súper Yatzy (75p)',
-          it: 'Super Yatzy (75p)',
-          pl: 'Super Yatzy (75 pkt)',
+          da: 'Super Yatzy (${pts}p)',
+          en: 'Super Yatzy (${pts}p)',
+          sv: 'Super Yatzy (${pts}p)',
+          no: 'Super Yatzy (${pts}p)',
+          fi: 'Super Yatzy (${pts}p)',
+          is_: 'Ofur Yatzy (${pts}p)',
+          de: 'Super Yatzy (${pts}p)',
+          nl: 'Super Yatzy (${pts}p)',
+          fr: 'Super Yatzy (${pts}p)',
+          es: 'Súper Yatzy (${pts}p)',
+          it: 'Super Yatzy (${pts}p)',
+          pl: 'Super Yatzy ($pts pkt)',
         );
     }
   }
@@ -1331,6 +1334,7 @@ class AppStrings {
     YatzyCategory cat, {
     int upperParCount = 3,
     int diceCount = 5,
+    YatzyGameRules? rules,
   }) {
     if (cat.isUpper) {
       final face = cat.upperFace!;
@@ -1585,34 +1589,36 @@ class AppStrings {
           pl: 'Dowolny układ (suma wszystkich kości)',
         );
       case YatzyCategory.yatzy:
+        final pts = rules?.yatzyBasePoints ?? 50;
         return _pick(
-          da: 'Alle terninger ens (50 point uanset øjne)',
-          en: 'All dice identical (50 points regardless of face)',
-          sv: 'Alla tärningar lika (alltid 50 poäng)',
-          no: 'Alle terninger like (alltid 50 poeng)',
-          fi: 'Kaikki nopat samat (aina 50 pistettä)',
-          is_: 'Allir teningar eins (alltaf 50 stig)',
-          de: 'Alle Würfel gleich (immer 50 Punkte)',
-          nl: 'Alle dobbelstenen gelijk (altijd 50 punten)',
-          fr: 'Tous les dés identiques (toujours 50 points)',
-          es: 'Todos los dados iguales (siempre 50 puntos)',
-          it: 'Tutti i dadi uguali (sempre 50 punti)',
-          pl: 'Wszystkie kości jednakowe (zawsze 50 pkt)',
+          da: 'Alle terninger ens ($pts point uanset øjne)',
+          en: 'All dice identical ($pts points regardless of face)',
+          sv: 'Alla tärningar lika (alltid $pts poäng)',
+          no: 'Alle terninger like (alltid $pts poeng)',
+          fi: 'Kaikki nopat samat (aina $pts pistettä)',
+          is_: 'Allir teningar eins (alltaf $pts stig)',
+          de: 'Alle Würfel gleich (immer $pts Punkte)',
+          nl: 'Alle dobbelstenen gelijk (altijd $pts punten)',
+          fr: 'Tous les dés identiques (toujours $pts points)',
+          es: 'Todos los dados iguales (siempre $pts puntos)',
+          it: 'Tutti i dadi uguali (sempre $pts punti)',
+          pl: 'Wszystkie kości jednakowe (zawsze $pts pkt)',
         );
       case YatzyCategory.superYatzy:
+        final pts = rules?.superYatzyBasePoints ?? 75;
         return _pick(
-          da: 'Alle terninger ens — Bonus Jackpot (75 point!)',
-          en: 'All dice identical — Bonus Jackpot (75 points!)',
-          sv: 'Alla tärningar lika — Bonusjackpott (75 poäng!)',
-          no: 'Alle terninger like — Bonusjackpot (75 poeng!)',
-          fi: 'Kaikki nopat samat — Bonusjättipotti (75 pistettä!)',
-          is_: 'Allir teningar eins — Bónusvinningur (75 stig!)',
-          de: 'Alle Würfel gleich — Bonus-Jackpot (75 Punkte!)',
-          nl: 'Alle dobbelstenen gelijk — Bonus Jackpot (75 punten!)',
-          fr: 'Tous les dés identiques — Super Jackpot (75 points !)',
-          es: 'Todos los dados iguales — Súper Jackpot (¡75 puntos!)',
-          it: 'Tutti i dadi uguali — Super Jackpot (75 punti!)',
-          pl: 'Wszystkie kości jednakowe — Bonusowy Jackpot (75 pkt!)',
+          da: 'Alle terninger ens — Bonus Jackpot ($pts point!)',
+          en: 'All dice identical — Bonus Jackpot ($pts points!)',
+          sv: 'Alla tärningar lika — Bonusjackpott ($pts poäng!)',
+          no: 'Alle terninger like — Bonusjackpot ($pts poeng!)',
+          fi: 'Kaikki nopat samat — Bonusjättipotti ($pts pistettä!)',
+          is_: 'Allir teningar eins — Bónusvinningur ($pts stig!)',
+          de: 'Alle Würfel gleich — Bonus-Jackpot ($pts Punkte!)',
+          nl: 'Alle dobbelstenen gelijk — Bonus Jackpot ($pts punten!)',
+          fr: 'Tous les dés identiques — Super Jackpot ($pts points !)',
+          es: 'Todos los dados iguales — Súper Jackpot (¡$pts puntos!)',
+          it: 'Tutti i dadi uguali — Super Jackpot ($pts punti!)',
+          pl: 'Wszystkie kości jednakowe — Bonusowy Jackpot ($pts pkt!)',
         );
       default:
         return '';
@@ -2187,6 +2193,51 @@ class AppStrings {
         );
     }
   }
+
+  String get scalePointsSettingLabel => _pick(
+        da: 'Point-skalering (Bonus & Yatzy)',
+        en: 'Point Scaling (Bonus & Yatzy)',
+        sv: 'Poängskalning (Bonus & Yatzy)',
+        no: 'Poengskalering (Bonus & Yatzy)',
+        fi: 'Pisteytyksen skaalaus (Bonus & Yatzy)',
+        is_: 'Stigaskölun (Bónus & Yatzy)',
+        de: 'Punkte-Skalierung (Bonus & Yatzy)',
+        nl: 'Puntenschaling (Bonus & Yatzy)',
+        fr: 'Échelle des Points (Bonus & Yatzy)',
+        es: 'Escalado de Puntos (Bono y Yatzy)',
+        it: 'Scala Punti (Bonus e Yatzy)',
+        pl: 'Skalowanie Punktów (Bonus i Yatzy)',
+      );
+
+  String scalePointsOptionLabel(bool scaled) => scaled
+      ? _pick(
+          da: '⚖️ Dynamisk (Skaleret efter terninger & sider)',
+          en: '⚖️ Dynamic (Scaled to Dice & Sides)',
+          sv: '⚖️ Dynamisk (Skalad efter tärningar & sidor)',
+          no: '⚖️ Dynamisk (Skalert etter terninger & sider)',
+          fi: '⚖️ Dynaaminen (Skaalattu noppien mukaan)',
+          is_: '⚖️ Kvik (Skalað eftir teningum & hliðum)',
+          de: '⚖️ Dynamisch (Skaliert nach Würfeln & Seiten)',
+          nl: '⚖️ Dynamisch (Geschaald naar dobbelstenen)',
+          fr: '⚖️ Dynamique (Adapté aux dés et faces)',
+          es: '⚖️ Dinámico (Escalado según dados y caras)',
+          it: '⚖️ Dinamico (Adattato a dadi e facce)',
+          pl: '⚖️ Dynamiczne (Skalowane do kości i ścianek)',
+        )
+      : _pick(
+          da: '🔒 Klassisk Fast (Fast 50p/35p uanset terninger)',
+          en: '🔒 Classic Fixed (Fixed 50p/35p always)',
+          sv: '🔒 Klassisk Fast (Fast 50p/35p oavsett tärningar)',
+          no: '🔒 Klassisk Fast (Fast 50p/35p uansett terninger)',
+          fi: '🔒 Klassinen Kiinteä (Kiinteä 50p/35p aina)',
+          is_: '🔒 Klassískt Fast (Fast 50p/35p alltaf)',
+          de: '🔒 Klassisch Fest (Immer feste 50p/35p)',
+          nl: '🔒 Klassiek Vast (Altijd vaste 50p/35p)',
+          fr: '🔒 Classique Fixe (50p/35p fixes toujours)',
+          es: '🔒 Clásico Fijo (Siempre 50p/35p fijos)',
+          it: '🔒 Classico Fisso (Sempre 50p/35p fissi)',
+          pl: '🔒 Klasyczne Stałe (Zawsze stałe 50/35 pkt)',
+        );
 
   String get diceCountSettingLabel => _pick(
         da: 'Antal terninger',

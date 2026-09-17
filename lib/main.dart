@@ -241,6 +241,7 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
       diceValues,
       upperParCount: _rules.upperParCount,
       region: _rules.region,
+      rules: _rules,
     );
 
     final scoredPlayerIdx = _activePlayerIndex;

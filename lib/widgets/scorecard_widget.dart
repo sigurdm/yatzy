@@ -536,11 +536,12 @@ class _PencilScorecardWidgetState extends State<PencilScorecardWidget> {
     bool isMobile,
   ) {
     final s = widget.strings;
-    final label = s.categoryLabel(category);
+    final label = s.categoryLabel(category, rules: widget.rules);
     final desc = s.categoryDescription(
       category,
       upperParCount: widget.rules.upperParCount,
       diceCount: widget.rules.diceCount,
+      rules: widget.rules,
     );
 
     return Tooltip(
@@ -752,6 +753,7 @@ class _PencilScorecardWidgetState extends State<PencilScorecardWidget> {
         widget.currentDiceValues,
         upperParCount: widget.rules.upperParCount,
         region: widget.rules.region,
+        rules: widget.rules,
       );
       final formattedPreview = YatzyScorer.formatScore(category, previewScore);
       final isPositivePreview =
@@ -859,6 +861,7 @@ class _PencilScorecardWidgetState extends State<PencilScorecardWidget> {
       allUpperFilled: allUpperFilled,
       canStillEarn: player.canStillEarnBonus,
       upperDiffSum: player.upperDiffSum,
+      bonusPoints: widget.rules.upperBonusPoints,
     );
 
     Color textColor;
