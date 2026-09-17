@@ -119,7 +119,8 @@ class GameVariantPickerDialog extends StatelessWidget {
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: YatzyGameVariant.values.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final variant = YatzyGameVariant.values[index];
                     final isSelected = variant == currentVariant;

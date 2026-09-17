@@ -87,7 +87,8 @@ class GameOverDialog extends StatelessWidget {
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: sortedPlayers.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final player = sortedPlayers[index];
                     final isWinner = player.grandTotal == highestScore;

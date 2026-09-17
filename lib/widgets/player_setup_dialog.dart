@@ -435,7 +435,8 @@ class _PlayerSetupDialogState extends State<PlayerSetupDialog> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: _controllers.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 6),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 6),
                         itemBuilder: (context, index) {
                           return Row(
                             children: [
