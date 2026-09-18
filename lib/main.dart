@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/app_strings.dart';
 import 'models/yatzy_models.dart';
+import 'models/yatzy_strategy_solver.dart';
 import 'widgets/game_over_dialog.dart';
 import 'widgets/game_variant_picker_dialog.dart';
 import 'widgets/language_selector_dialog.dart';
@@ -61,6 +62,7 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
   late List<DieState> _dice;
   int _rollsUsed = 1;
   bool _isRolling = false;
+  bool _coachModeEnabled = false;
 
   int? _lastScoredPlayerIndex;
   YatzyCategory? _lastScoredCategory;
@@ -226,6 +228,23 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
     setState(() {
       _dice = [
         for (final d in _dice) d.copyWith(isHeld: !allHeld),
+      ];
+    });
+  }
+
+  void _toggleCoachMode() {
+    setState(() {
+      _coachModeEnabled = !_coachModeEnabled;
+    });
+  }
+
+  void _applyOptimalHold(List<int> holdIndices) {
+    if (_isRolling || _rollsUsed == 0) return;
+    final holdSet = holdIndices.toSet();
+    setState(() {
+      _dice = [
+        for (int i = 0; i < _dice.length; i++)
+          _dice[i].copyWith(isHeld: holdSet.contains(i)),
       ];
     });
   }
@@ -404,7 +423,18 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
 
     final horizontalPad = isMobile ? 12.0 : 44.0;
 
+    final TurnCoachAdvice? coachAdvice =
+        (_coachModeEnabled && _rollsUsed > 0 && !isGameComplete && !_isRolling)
+            ? YatzyStrategySolver.analyzeTurn(
+                rules: _rules,
+                player: activePlayer,
+                dice: _dice,
+                rollsUsed: _rollsUsed,
+              )
+            : null;
+
     return Scaffold(
+      backgroundColor: PencilPalette.paperBg,
       body: CustomPaint(
         painter: PaperBackgroundPainter(
           lineSpacing: 28.0,
@@ -414,7 +444,7 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // 1. Sketchbook Header Bar
+              // 1. Compact Sketch Header Bar
               _buildSketchHeader(isGameComplete, isMobile, horizontalPad),
 
               // 2. Pinned Dice Tray at Top (Always accessible while scrolling scorecard!)
@@ -441,6 +471,14 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
                       undoCount: _undoStack.length,
                       activePlayerName: activePlayer.name,
                       strings: _strings,
+                      coachAdvice: coachAdvice,
+                      onApplyOptimalHold: coachAdvice?.optimalHold != null
+                          ? () => _applyOptimalHold(
+                                coachAdvice!.optimalHold!.holdIndices,
+                              )
+                          : null,
+                      onSelectCoachCategory: _assignCategoryScore,
+                      rules: _rules,
                     ),
                   ),
                 ),
@@ -469,6 +507,7 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
                         onSelectCategory: _assignCategoryScore,
                         strings: _strings,
                         rules: _rules,
+                        coachAdvice: coachAdvice,
                       ),
                     ),
                   ),
@@ -570,6 +609,25 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
                   ],
                 ),
               ),
+            ),
+          ),
+
+          // Strategy Coach / Expected Best Score (EV) Toggle Button
+          Tooltip(
+            message: s.coachButtonTooltip(_coachModeEnabled),
+            child: _HeaderPencilButton(
+              icon: _coachModeEnabled
+                  ? Icons.psychology_alt_rounded
+                  : Icons.school_outlined,
+              label: s.coachButtonLabel,
+              color: _coachModeEnabled
+                  ? PencilPalette.greenPencil
+                  : PencilPalette.graphiteMedium,
+              fillColor: _coachModeEnabled
+                  ? const Color(0xFFEAF6EC)
+                  : PencilPalette.paperCard,
+              onTap: _toggleCoachMode,
+              compact: isMobile,
             ),
           ),
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../l10n/app_strings.dart';
 import '../models/yatzy_models.dart';
+import '../models/yatzy_strategy_solver.dart';
 import 'pencil_painters.dart';
 
 class PencilDiceTray extends StatelessWidget {
@@ -18,6 +19,10 @@ class PencilDiceTray extends StatelessWidget {
   final int undoCount;
   final String activePlayerName;
   final AppStrings strings;
+  final TurnCoachAdvice? coachAdvice;
+  final VoidCallback? onApplyOptimalHold;
+  final ValueChanged<YatzyCategory>? onSelectCoachCategory;
+  final YatzyGameRules? rules;
 
   const PencilDiceTray({
     super.key,
@@ -33,6 +38,10 @@ class PencilDiceTray extends StatelessWidget {
     this.undoCount = 0,
     required this.activePlayerName,
     required this.strings,
+    this.coachAdvice,
+    this.onApplyOptimalHold,
+    this.onSelectCoachCategory,
+    this.rules,
   });
 
   @override
@@ -266,6 +275,12 @@ class PencilDiceTray extends StatelessWidget {
                           dieSize: dieSize,
                           isRolling: isRolling && !dice[i].isHeld,
                           waitingForFirstRoll: rollsUsed == 0,
+                          isCoachRecommendedHold: coachAdvice != null &&
+                              rollsUsed > 0 &&
+                              !coachAdvice!.shouldScoreNow &&
+                              (coachAdvice!.optimalHold?.holdIndices
+                                      .contains(i) ??
+                                  false),
                           onTap: () =>
                               rollsUsed == 0 ? onRoll() : onToggleHold(i),
                           strings: strings,
@@ -284,6 +299,12 @@ class PencilDiceTray extends StatelessWidget {
                           dieSize: dieSize,
                           isRolling: isRolling && !dice[i].isHeld,
                           waitingForFirstRoll: rollsUsed == 0,
+                          isCoachRecommendedHold: coachAdvice != null &&
+                              rollsUsed > 0 &&
+                              !coachAdvice!.shouldScoreNow &&
+                              (coachAdvice!.optimalHold?.holdIndices
+                                      .contains(i) ??
+                                  false),
                           onTap: () =>
                               rollsUsed == 0 ? onRoll() : onToggleHold(i),
                           strings: strings,
@@ -322,6 +343,12 @@ class PencilDiceTray extends StatelessWidget {
                         dieSize: dieSize,
                         isRolling: isRolling && !dice[i].isHeld,
                         waitingForFirstRoll: rollsUsed == 0,
+                        isCoachRecommendedHold: coachAdvice != null &&
+                            rollsUsed > 0 &&
+                            !coachAdvice!.shouldScoreNow &&
+                            (coachAdvice!.optimalHold?.holdIndices
+                                    .contains(i) ??
+                                false),
                         onTap: () =>
                             rollsUsed == 0 ? onRoll() : onToggleHold(i),
                         strings: strings,
@@ -354,10 +381,167 @@ class PencilDiceTray extends StatelessWidget {
                   ),
                 ),
               ],
+              if (coachAdvice != null && rollsUsed > 0) ...[
+                SizedBox(height: isMobile ? 6 : 8),
+                _buildCoachAdviceBanner(coachAdvice!, isMobile: isMobile),
+              ],
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildCoachAdviceBanner(
+    TurnCoachAdvice advice, {
+    required bool isMobile,
+  }) {
+    final bestNow = advice.bestCategoryNow;
+    final bestNowName = strings.categoryLabel(bestNow.category, rules: rules);
+    final bestNowFormatted = YatzyScorer.formatScore(
+      bestNow.category,
+      bestNow.immediateScore,
+    );
+    final targetNames = advice.targetCategories
+        .map((c) => strings.categoryLabel(c, rules: rules))
+        .join(' / ');
+
+    final hasMoreRolls = rollsUsed < maxRolls && advice.optimalHold != null;
+
+    return PencilBox(
+      borderColor: PencilPalette.greenPencil,
+      fillColor: const Color(0xFFF6FBE9),
+      hasPencilShading: true,
+      shadingOpacity: 0.10,
+      strokeWidth: 1.4,
+      seed: 917,
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 8 : 12,
+        vertical: isMobile ? 5 : 6,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (hasMoreRolls) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    strings.coachHoldRecommendation(
+                      heldFaces: advice.optimalHold!.heldFaces,
+                      expectedPoints: advice.optimalHold!.expectedTurnPoints,
+                      shouldScoreNow: advice.shouldScoreNow,
+                      bestCategoryName: bestNowName,
+                      bestCategoryScore: bestNowFormatted,
+                      targetNames: targetNames,
+                    ),
+                    style: GoogleFonts.patrickHand(
+                      fontSize: isMobile ? 13.5 : 15.0,
+                      fontWeight: FontWeight.bold,
+                      color: PencilPalette.graphiteDark,
+                      height: 1.1,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                if (advice.isCurrentHoldOptimal || advice.shouldScoreNow)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: PencilPalette.greenPencil.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: PencilPalette.greenPencil,
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Text(
+                      strings.coachOptimalBadge,
+                      style: GoogleFonts.patrickHand(
+                        fontSize: isMobile ? 12.0 : 13.0,
+                        fontWeight: FontWeight.bold,
+                        color: PencilPalette.greenPencil,
+                      ),
+                    ),
+                  )
+                else if (onApplyOptimalHold != null)
+                  GestureDetector(
+                    onTap: onApplyOptimalHold,
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: PencilPalette.yellowHighlighter.withValues(
+                            alpha: 0.65,
+                          ),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: PencilPalette.bluePencil,
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.auto_fix_high,
+                              size: 13,
+                              color: PencilPalette.bluePencil,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              strings.coachApplyHoldButton,
+                              style: GoogleFonts.patrickHand(
+                                fontSize: isMobile ? 12.5 : 13.5,
+                                fontWeight: FontWeight.bold,
+                                color: PencilPalette.bluePencil,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 3),
+          ],
+          GestureDetector(
+            onTap: onSelectCoachCategory != null
+                ? () => onSelectCoachCategory!(bestNow.category)
+                : null,
+            child: MouseRegion(
+              cursor: onSelectCoachCategory != null
+                  ? SystemMouseCursors.click
+                  : SystemMouseCursors.basic,
+              child: Text(
+                strings.coachCategoryRecommendation(
+                  categoryName: bestNowName,
+                  scoreFormatted: bestNowFormatted,
+                  bonusDelta: bestNow.bonusEvDelta,
+                  netStrategicValue: bestNow.strategicNetValue,
+                  isFinalRoll: !hasMoreRolls,
+                ),
+                style: GoogleFonts.patrickHand(
+                  fontSize: isMobile ? 13.0 : 14.5,
+                  fontWeight:
+                      !hasMoreRolls ? FontWeight.bold : FontWeight.w600,
+                  color: PencilPalette.greenPencil,
+                  height: 1.1,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -483,6 +667,7 @@ class PencilSingleDieWidget extends StatefulWidget {
   final double dieSize;
   final bool isRolling;
   final bool waitingForFirstRoll;
+  final bool isCoachRecommendedHold;
   final VoidCallback onTap;
   final AppStrings strings;
 
@@ -494,6 +679,7 @@ class PencilSingleDieWidget extends StatefulWidget {
     this.dieSize = 64.0,
     required this.isRolling,
     this.waitingForFirstRoll = false,
+    this.isCoachRecommendedHold = false,
     required this.onTap,
     required this.strings,
   });
@@ -607,6 +793,35 @@ class _PencilSingleDieWidgetState extends State<PencilSingleDieWidget>
                             color: PencilPalette.redPencil,
                             strokeWidth: 2.1,
                             seed: widget.index * 19 + 5,
+                          ),
+                        ),
+                      ),
+                    // Strategy Coach recommended hold star badge
+                    if (widget.isCoachRecommendedHold &&
+                        !widget.waitingForFirstRoll)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: Container(
+                          width: 17,
+                          height: 17,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF3B0),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: PencilPalette.greenPencil,
+                              width: 1.3,
+                            ),
+                          ),
+                          child: const Text(
+                            '★',
+                            style: TextStyle(
+                              fontSize: 10,
+                              height: 1.0,
+                              fontWeight: FontWeight.bold,
+                              color: PencilPalette.greenPencil,
+                            ),
                           ),
                         ),
                       ),

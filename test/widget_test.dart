@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:yatzee/l10n/app_strings.dart';
 import 'package:yatzee/main.dart';
 import 'package:yatzee/models/yatzy_models.dart';
+import 'package:yatzee/models/yatzy_strategy_solver.dart';
 
 void main() {
   group('5-Dice, 6-Dice, 7-Dice & d8 Yatzy Scoring Rules', () {
@@ -202,6 +203,49 @@ void main() {
         ),
         90,
       );
+    });
+
+    test('YatzyStrategySolver computes exact optimal holds and strategic category rankings', () {
+      const rules = YatzyGameRules();
+      final player = PlayerScorecard(id: 'p1', name: 'Test', rules: rules);
+
+      // Roll 1 with three 6s and two low dice: [6, 6, 6, 1, 2]
+      final diceRoll1 = [
+        const DieState(value: 6),
+        const DieState(value: 6),
+        const DieState(value: 6),
+        const DieState(value: 1),
+        const DieState(value: 2),
+      ];
+
+      final advice1 = YatzyStrategySolver.analyzeTurn(
+        rules: rules,
+        player: player,
+        dice: diceRoll1,
+        rollsUsed: 1,
+      );
+
+      // Optimal hold should keep the three 6s ([6, 6, 6])
+      expect(advice1.optimalHold, isNotNull);
+      expect(advice1.optimalHold!.heldFaces, equals([6, 6, 6]));
+
+      // On final roll (Roll 3) with four 6s ([6, 6, 6, 6, 2]), scoring Sixes (+6 above Par + huge bonus EV boost)
+      // should rank #1 ahead of Four of a Kind or Chance
+      final diceRoll3 = [
+        const DieState(value: 6),
+        const DieState(value: 6),
+        const DieState(value: 6),
+        const DieState(value: 6),
+        const DieState(value: 2),
+      ];
+      final advice3 = YatzyStrategySolver.analyzeTurn(
+        rules: rules,
+        player: player,
+        dice: diceRoll3,
+        rollsUsed: 3,
+      );
+      expect(advice3.bestCategoryNow.category, equals(YatzyCategory.sixes));
+      expect(advice3.bestCategoryNow.bonusEvDelta, greaterThan(5.0));
     });
   });
 

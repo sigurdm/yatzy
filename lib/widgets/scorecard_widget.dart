@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../l10n/app_strings.dart';
 import '../models/yatzy_models.dart';
+import '../models/yatzy_strategy_solver.dart';
 import 'pencil_painters.dart';
 
 class PencilScorecardWidget extends StatefulWidget {
@@ -14,6 +15,7 @@ class PencilScorecardWidget extends StatefulWidget {
   final void Function(YatzyCategory category) onSelectCategory;
   final AppStrings strings;
   final YatzyGameRules rules;
+  final TurnCoachAdvice? coachAdvice;
 
   const PencilScorecardWidget({
     super.key,
@@ -26,6 +28,7 @@ class PencilScorecardWidget extends StatefulWidget {
     required this.onSelectCategory,
     required this.strings,
     required this.rules,
+    this.coachAdvice,
   });
 
   @override
@@ -759,6 +762,10 @@ class _PencilScorecardWidgetState extends State<PencilScorecardWidget> {
       final isPositivePreview =
           category.isUpper ? previewScore >= 0 : previewScore > 0;
 
+      final isCoachRecommended = widget.coachAdvice != null &&
+          widget.coachAdvice!.categoryRankings.isNotEmpty &&
+          widget.coachAdvice!.bestCategoryNow.category == category;
+
       return _InteractivePreviewCell(
         key: Key('open_cell_${category.name}_$playerIdx'),
         width: width,
@@ -767,6 +774,7 @@ class _PencilScorecardWidgetState extends State<PencilScorecardWidget> {
         isPositivePreview: isPositivePreview,
         isUpper: category.isUpper,
         previewScore: previewScore,
+        isCoachRecommended: isCoachRecommended,
         onTap: () => widget.onSelectCategory(category),
       );
     }
@@ -1027,6 +1035,7 @@ class _InteractivePreviewCell extends StatefulWidget {
   final bool isPositivePreview;
   final bool isUpper;
   final int previewScore;
+  final bool isCoachRecommended;
   final VoidCallback onTap;
 
   const _InteractivePreviewCell({
@@ -1037,6 +1046,7 @@ class _InteractivePreviewCell extends StatefulWidget {
     required this.isPositivePreview,
     required this.isUpper,
     required this.previewScore,
+    this.isCoachRecommended = false,
     required this.onTap,
   });
 
@@ -1053,6 +1063,8 @@ class _InteractivePreviewCellState extends State<_InteractivePreviewCell> {
     Color previewColor = PencilPalette.graphiteLight;
     if (_isHovered) {
       previewColor = PencilPalette.bluePencil;
+    } else if (widget.isCoachRecommended) {
+      previewColor = PencilPalette.greenPencil;
     } else if (widget.isUpper) {
       if (widget.previewScore > 0) {
         previewColor = PencilPalette.greenPencil.withValues(alpha: 0.65);
@@ -1078,7 +1090,9 @@ class _InteractivePreviewCellState extends State<_InteractivePreviewCell> {
           decoration: BoxDecoration(
             color: _isHovered
                 ? PencilPalette.yellowHighlighter.withValues(alpha: 0.55)
-                : PencilPalette.yellowHighlighter.withValues(alpha: 0.18),
+                : (widget.isCoachRecommended
+                    ? const Color(0xFFE5F6E8)
+                    : PencilPalette.yellowHighlighter.withValues(alpha: 0.18)),
             border: Border(
               left: BorderSide(
                 color: PencilPalette.graphiteFaint.withValues(alpha: 0.6),
@@ -1089,14 +1103,16 @@ class _InteractivePreviewCellState extends State<_InteractivePreviewCell> {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              if (_isHovered)
+              if (_isHovered || widget.isCoachRecommended)
                 Positioned.fill(
                   child: Padding(
                     padding: const EdgeInsets.all(2.5),
                     child: CustomPaint(
                       painter: PencilBoxPainter(
-                        borderColor: PencilPalette.bluePencil,
-                        strokeWidth: 1.2,
+                        borderColor: _isHovered
+                            ? PencilPalette.bluePencil
+                            : PencilPalette.greenPencil,
+                        strokeWidth: _isHovered ? 1.2 : 1.4,
                         overshoot: 1.2,
                         seed: 88,
                       ),
@@ -1106,14 +1122,27 @@ class _InteractivePreviewCellState extends State<_InteractivePreviewCell> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  if (widget.isCoachRecommended) ...[
+                    const Text(
+                      '★',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: PencilPalette.greenPencil,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                  ],
                   Text(
                     widget.formattedPreview,
                     style: GoogleFonts.patrickHand(
                       fontSize: _isHovered ? 19 : 17.5,
-                      fontWeight:
-                          _isHovered ? FontWeight.bold : FontWeight.w500,
-                      fontStyle:
-                          _isHovered ? FontStyle.normal : FontStyle.italic,
+                      fontWeight: (_isHovered || widget.isCoachRecommended)
+                          ? FontWeight.bold
+                          : FontWeight.w500,
+                      fontStyle: (_isHovered || widget.isCoachRecommended)
+                          ? FontStyle.normal
+                          : FontStyle.italic,
                       color: previewColor,
                     ),
                   ),

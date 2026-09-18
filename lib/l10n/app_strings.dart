@@ -2848,4 +2848,171 @@ class AppStrings {
           ],
         ),
       ];
+
+  // ---------------------------------------------------------------------------
+  // Strategy Coach / Expected Best Score (EV) Mode
+  // ---------------------------------------------------------------------------
+
+  String get coachButtonLabel => _pick(
+        da: '🎓 Coach',
+        en: '🎓 Coach',
+        sv: '🎓 Coach',
+        no: '🎓 Coach',
+        fi: '🎓 Valmentaja',
+        is_: '🎓 Þjálfari',
+        de: '🎓 Coach',
+        nl: '🎓 Coach',
+        fr: '🎓 Coach',
+        es: '🎓 Coach',
+        it: '🎓 Coach',
+        pl: '🎓 Trener',
+      );
+
+  String coachButtonTooltip(bool enabled) => enabled
+      ? _pick(
+          da: 'Strategi-coach er TIL (viser forventet værdi / bedste hold & kategori)',
+          en: 'Strategy Coach is ON (shows expected best hold & category placement)',
+          sv: 'Strategicoach är PÅ (visar förväntat värde / bästa håll & kategori)',
+          no: 'Strategicoach er PÅ (viser forventet verdi / beste hold & kategori)',
+          fi: 'Strategiavalmentaja PÄÄLLÄ (näyttää odotusarvon ja parhaan valinnan)',
+          is_: 'Herkænskuþjálfari KVEIKTUR (sýnir væntigildi og bestu valkosti)',
+          de: 'Strategie-Coach ist AN (zeigt Erwartungswert / besten Halt & Kategorie)',
+          nl: 'Strategie-coach staat AAN (toont verwachte waarde & beste keuze)',
+          fr: 'Coach stratégique ACTIVÉ (affiche l\'espérance / meilleure garde et catégorie)',
+          es: 'Coach estratégico ACTIVADO (muestra valor esperado y mejor jugada)',
+          it: 'Coach strategico ATTIVO (mostra valore atteso e scelta migliore)',
+          pl: 'Trener strategii WŁĄCZONY (pokazuje wartość oczekiwaną i najlepszy ruch)',
+        )
+      : _pick(
+          da: 'Slå Strategi-coach til (lær optimal Yatzy-strategi med forventet score)',
+          en: 'Turn ON Strategy Coach (learn optimal Yatzy strategy with expected scores)',
+          sv: 'Slå PÅ Strategicoach (lär dig optimal Yatzy-strategi med förväntad poäng)',
+          no: 'Slå PÅ Strategicoach (lær optimal Yatzy-strategi med forventet poengsum)',
+          fi: 'Kytke Strategiavalmentaja PÄÄLLE (opi optimaalinen Yatzy-strategia)',
+          is_: 'Kveikja á Herkænskuþjálfara (lærðu bestu Yatzy-herkænskuna)',
+          de: 'Strategie-Coach einschalten (optimale Yatzy-Strategie & Erwartungswerte lernen)',
+          nl: 'Schakel Strategie-coach AAN (leer optimale Yatzy-strategie met EV)',
+          fr: 'Activer le Coach stratégique (apprendre la stratégie optimale avec espérance)',
+          es: 'Activar Coach estratégico (aprende la estrategia óptima con puntaje esperado)',
+          it: 'Attiva Coach strategico (impara la strategia ottimale con punteggio atteso)',
+          pl: 'Włącz Trenera strategii (ucz się optymalnej strategii Yatzy z EV)',
+        );
+
+  String get coachOptimalBadge => _pick(
+        da: '✓ Optimalt hold!',
+        en: '✓ Optimal hold!',
+        sv: '✓ Optimalt val!',
+        no: '✓ Optimalt hold!',
+        fi: '✓ Optimaalinen!',
+        is_: '✓ Besta val!',
+        de: '✓ Optimal gehalten!',
+        nl: '✓ Optimale keuze!',
+        fr: '✓ Garde optimale !',
+        es: '✓ ¡Selección óptima!',
+        it: '✓ Scelta ottimale!',
+        pl: '✓ Optymalny wybór!',
+      );
+
+  String get coachApplyHoldButton => _pick(
+        da: 'Vælg bedste hold',
+        en: 'Select best hold',
+        sv: 'Välj bästa håll',
+        no: 'Velg beste hold',
+        fi: 'Valitse paras pito',
+        is_: 'Velja bestu',
+        de: 'Beste Auswahl',
+        nl: 'Kies beste',
+        fr: 'Choisir optimal',
+        es: 'Elegir óptimo',
+        it: 'Scegli ottimo',
+        pl: 'Wybierz najlepsze',
+      );
+
+  String coachHoldRecommendation({
+    required List<int> heldFaces,
+    required double expectedPoints,
+    required bool shouldScoreNow,
+    required String bestCategoryName,
+    required String bestCategoryScore,
+    required String targetNames,
+  }) {
+    final evStr = expectedPoints.toStringAsFixed(1);
+    if (shouldScoreNow) {
+      return _pick(
+        da: '🛑 Stop & notér nu: $bestCategoryName ($bestCategoryScore) er bedre end at kaste om!',
+        en: '🛑 Stop & score now: $bestCategoryName ($bestCategoryScore) beats rerolling!',
+        sv: '🛑 Stanna & bokför nu: $bestCategoryName ($bestCategoryScore) är bättre än omslag!',
+        no: '🛑 Stopp & noter nå: $bestCategoryName ($bestCategoryScore) er bedre enn omkast!',
+        fi: '🛑 Merkitse nyt: $bestCategoryName ($bestCategoryScore) on parempi kuin uusi heitto!',
+        is_: '🛑 Skráðu núna: $bestCategoryName ($bestCategoryScore) er betra en að kasta aftur!',
+        de: '🛑 Jetzt eintragen: $bestCategoryName ($bestCategoryScore) ist besser als neu würfeln!',
+        nl: '🛑 Nu noteren: $bestCategoryName ($bestCategoryScore) is beter dan opnieuw gooien!',
+        fr: '🛑 Notez maintenant : $bestCategoryName ($bestCategoryScore) bat un relancer !',
+        es: '🛑 Anota ahora: ¡$bestCategoryName ($bestCategoryScore) supera volver a tirar!',
+        it: '🛑 Segna ora: $bestCategoryName ($bestCategoryScore) è meglio che ritirare!',
+        pl: '🛑 Zapisz teraz: $bestCategoryName ($bestCategoryScore) jest lepsze niż przerzut!',
+      );
+    }
+    if (heldFaces.isEmpty) {
+      return _pick(
+        da: '💡 Bedste træk: Kast alle terninger om (EV: ~$evStr p) → sigter mod $targetNames',
+        en: '💡 Best move: Reroll all dice (EV: ~$evStr p) → aiming for $targetNames',
+        sv: '💡 Bästa drag: Slå om alla tärningar (EV: ~$evStr p) → siktar på $targetNames',
+        no: '💡 Beste trekk: Kast alle terninger om (EV: ~$evStr p) → sikter mot $targetNames',
+        fi: '💡 Paras siirto: Heitä kaikki uudelleen (EV: ~$evStr p) → tähtäimessä $targetNames',
+        is_: '💡 Besti leikur: Kasta öllum aftur (EV: ~$evStr p) → stefnir á $targetNames',
+        de: '💡 Bester Zug: Alle neu würfeln (EV: ~$evStr P.) → Ziel: $targetNames',
+        nl: '💡 Beste zet: Gooi alles opnieuw (EV: ~$evStr p) → mikt op $targetNames',
+        fr: '💡 Meilleur coup : Tout relancer (EV : ~$evStr p) → vise $targetNames',
+        es: '💡 Mejor jugada: Tirar todos de nuevo (EV: ~$evStr p) → buscando $targetNames',
+        it: '💡 Mossa migliore: Ritira tutti i dadi (EV: ~$evStr p) → punta a $targetNames',
+        pl: '💡 Najlepszy ruch: Przerzuć wszystkie (EV: ~$evStr pkt) → cel: $targetNames',
+      );
+    }
+    final facesStr = '[${heldFaces.join(', ')}]';
+    return _pick(
+      da: '💡 Bedste hold: Behold $facesStr (EV: ~$evStr p) → sigter mod $targetNames',
+      en: '💡 Best hold: Keep $facesStr (EV: ~$evStr p) → aiming for $targetNames',
+      sv: '💡 Bästa håll: Behåll $facesStr (EV: ~$evStr p) → siktar på $targetNames',
+      no: '💡 Beste hold: Behold $facesStr (EV: ~$evStr p) → sikter mot $targetNames',
+      fi: '💡 Paras pito: Pidä $facesStr (EV: ~$evStr p) → tähtäimessä $targetNames',
+      is_: '💡 Best að halda: Halda $facesStr (EV: ~$evStr p) → stefnir á $targetNames',
+      de: '💡 Bester Halt: Behalte $facesStr (EV: ~$evStr P.) → Ziel: $targetNames',
+      nl: '💡 Beste keuze: Houd $facesStr (EV: ~$evStr p) → mikt op $targetNames',
+      fr: '💡 Meilleure garde : Garder $facesStr (EV : ~$evStr p) → vise $targetNames',
+      es: '💡 Mejor selección: Guardar $facesStr (EV: ~$evStr p) → buscando $targetNames',
+      it: '💡 Scelta migliore: Tieni $facesStr (EV: ~$evStr p) → punta a $targetNames',
+      pl: '💡 Najlepszy wybór: Zatrzymaj $facesStr (EV: ~$evStr pkt) → cel: $targetNames',
+    );
+  }
+
+  String coachCategoryRecommendation({
+    required String categoryName,
+    required String scoreFormatted,
+    required double bonusDelta,
+    required double netStrategicValue,
+    required bool isFinalRoll,
+  }) {
+    String bonusNote = '';
+    if (bonusDelta.abs() >= 1.0) {
+      final sign = bonusDelta >= 0 ? '+' : '';
+      bonusNote = ' • Bonus EV: $sign${bonusDelta.toStringAsFixed(1)}p';
+    }
+    final netSign = netStrategicValue >= 0 ? '+' : '';
+    final netStr = '$netSign${netStrategicValue.toStringAsFixed(1)}';
+    return _pick(
+      da: '★ Bedste felt nu: $categoryName ($scoreFormatted) [Strategisk værdi: $netStr$bonusNote]',
+      en: '★ Best score slot now: $categoryName ($scoreFormatted) [Strategic EV: $netStr$bonusNote]',
+      sv: '★ Bästa ruta nu: $categoryName ($scoreFormatted) [Strategiskt EV: $netStr$bonusNote]',
+      no: '★ Beste felt nå: $categoryName ($scoreFormatted) [Strategisk EV: $netStr$bonusNote]',
+      fi: '★ Paras rivi nyt: $categoryName ($scoreFormatted) [Strateginen EV: $netStr$bonusNote]',
+      is_: '★ Besti reitur núna: $categoryName ($scoreFormatted) [Væntigildi: $netStr$bonusNote]',
+      de: '★ Bestes Feld jetzt: $categoryName ($scoreFormatted) [Strategie-EV: $netStr$bonusNote]',
+      nl: '★ Beste vakje nu: $categoryName ($scoreFormatted) [Strategische EV: $netStr$bonusNote]',
+      fr: '★ Meilleure case : $categoryName ($scoreFormatted) [EV stratégique : $netStr$bonusNote]',
+      es: '★ Mejor casilla ahora: $categoryName ($scoreFormatted) [EV estratégico: $netStr$bonusNote]',
+      it: '★ Miglior casella ora: $categoryName ($scoreFormatted) [EV strategico: $netStr$bonusNote]',
+      pl: '★ Najlepsze pole teraz: $categoryName ($scoreFormatted) [Strategiczne EV: $netStr$bonusNote]',
+    );
+  }
 }
