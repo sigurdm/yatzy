@@ -39,6 +39,11 @@ jobs:
       - name: Build Flutter Web for GitHub Pages
         run: flutter build web --release --base-href "/yatzy/"
 
+      - name: Stamp service worker cache version with commit SHA
+        run: |
+          sed -i "s/__BUILD_ID__/${GITHUB_SHA}/g" build/web/flutter_bootstrap.js
+          grep -o "pencily_sw.js?v=[a-z0-9]*" build/web/flutter_bootstrap.js
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
