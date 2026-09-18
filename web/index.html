@@ -1,46 +1,178 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="Hand-drawn pencil & paper multiplayer Yatzy with 6 dice variants and an exact Strategy Coach.">
+  <meta name="theme-color" content="#FDFBF7">
 
-  <!-- iOS meta tags & icons -->
+  <!-- Mobile & iOS Web-Backed App (PWA) meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="yatzee">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Pencily Yatzy">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>yatzee</title>
+  <title>Pencily Yatzy</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #FDFBF7;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    /* Ruled notebook loading splash so standalone mobile launches feel instant */
+    #notebook-splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #FDFBF7;
+      background-image:
+        linear-gradient(90deg, transparent 32px, rgba(224, 122, 122, 0.55) 32px, rgba(224, 122, 122, 0.55) 34px, transparent 34px),
+        repeating-linear-gradient(0deg, #FDFBF7, #FDFBF7 27px, rgba(180, 208, 228, 0.55) 27px, rgba(180, 208, 228, 0.55) 28px);
+      transition: opacity 0.28s ease-out;
+    }
+    #notebook-splash.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .splash-card {
+      background: #FFFDF8;
+      border: 2.5px solid #2B2B2B;
+      border-radius: 10px;
+      padding: 20px 28px;
+      box-shadow: 4px 5px 0 rgba(43, 43, 43, 0.16);
+      text-align: center;
+      max-width: 280px;
+    }
+    .splash-icon {
+      width: 68px;
+      height: 68px;
+      border-radius: 14px;
+      margin-bottom: 10px;
+    }
+    .splash-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #2B2B2B;
+      letter-spacing: 0.8px;
+      margin: 0 0 4px 0;
+    }
+    .splash-sub {
+      font-size: 14px;
+      color: #5A5A5A;
+      margin: 0;
+    }
+  </style>
+
+  <script>
+    // Progressive Web App (PWA) install & standalone detection helper for Flutter
+    (function() {
+      var deferredInstallPrompt = null;
+      var stateListeners = [];
+
+      function notifyListeners() {
+        for (var i = 0; i < stateListeners.length; i++) {
+          try { stateListeners[i](); } catch (e) {}
+        }
+      }
+
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        notifyListeners();
+      });
+
+      window.addEventListener('appinstalled', function() {
+        deferredInstallPrompt = null;
+        notifyListeners();
+      });
+
+      window.pencilyPwa = {
+        canPromptInstall: function() {
+          return deferredInstallPrompt !== null;
+        },
+        triggerInstall: async function() {
+          if (!deferredInstallPrompt) return 'unavailable';
+          try {
+            deferredInstallPrompt.prompt();
+            var choice = await deferredInstallPrompt.userChoice;
+            if (choice && choice.outcome === 'accepted') {
+              deferredInstallPrompt = null;
+              notifyListeners();
+              return 'accepted';
+            }
+            return 'dismissed';
+          } catch (err) {
+            return 'error';
+          }
+        },
+        isStandalone: function() {
+          var mq = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+          var mqFs = window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches;
+          var iosStandalone = window.navigator && window.navigator.standalone === true;
+          return !!(mq || mqFs || iosStandalone);
+        },
+        getPlatform: function() {
+          var ua = (window.navigator && window.navigator.userAgent || '').toLowerCase();
+          var isIos = /iphone|ipad|ipod/.test(ua) ||
+            (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
+          if (isIos) return 'ios';
+          if (/android/.test(ua)) return 'android';
+          return 'desktop';
+        },
+        getShareUrl: function() {
+          var href = (window.location && window.location.href) || 'https://sigurdm.github.io/yatzy/';
+          if (href.indexOf('localhost') !== -1 || href.indexOf('127.0.0.1') !== -1) {
+            return 'https://sigurdm.github.io/yatzy/';
+          }
+          return href.split('#')[0];
+        },
+        onStateChanged: function(cb) {
+          if (typeof cb === 'function') {
+            stateListeners.push(cb);
+          }
+        }
+      };
+
+      // Automatically dismiss notebook splash screen when Flutter renders its first frame
+      window.addEventListener('flutter-first-frame', function() {
+        var splash = document.getElementById('notebook-splash');
+        if (splash) {
+          splash.classList.add('fade-out');
+          setTimeout(function() {
+            if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+          }, 320);
+        }
+      });
+    })();
+  </script>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <div id="notebook-splash">
+    <div class="splash-card">
+      <img class="splash-icon" src="icons/Icon-192.png" alt="Pencily Yatzy" />
+      <h1 class="splash-title">PENCILY YATZY</h1>
+      <p class="splash-sub">Sharpening pencils…</p>
+    </div>
+  </div>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

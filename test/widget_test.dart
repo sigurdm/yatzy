@@ -4,6 +4,7 @@ import 'package:yatzee/l10n/app_strings.dart';
 import 'package:yatzee/main.dart';
 import 'package:yatzee/models/yatzy_models.dart';
 import 'package:yatzee/models/yatzy_strategy_solver.dart';
+import 'package:yatzee/widgets/install_app_dialog.dart';
 import 'package:yatzee/widgets/score_celebration_overlay.dart';
 
 void main() {
@@ -449,5 +450,23 @@ void main() {
     await tester.tap(find.text('Hold alle'));
     await tester.pumpAndSettle();
     expect(tester.getSize(rollButtonFinder), equals(sizeInitial));
+
+    // Open Install Mobile Web App dialog via header button
+    await tester.tap(find.byIcon(Icons.install_mobile_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Install Mobile Web App'), findsOneWidget);
+    expect(find.byType(NotebookQrCodeWidget), findsOneWidget);
+
+    // Switch to iPhone / iPad tab and Android tab
+    await tester.tap(find.text('iPhone / iPad'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tap "Add to Home Screen"'), findsOneWidget);
+
+    await tester.tap(find.text('Android'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Select "Install app" or "Add to Home screen"'),
+      findsOneWidget,
+    );
   });
 }

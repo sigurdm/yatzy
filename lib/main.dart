@@ -6,9 +6,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'l10n/app_strings.dart';
 import 'models/yatzy_models.dart';
 import 'models/yatzy_strategy_solver.dart';
+import 'utils/pwa_install_helper.dart';
 import 'widgets/coach_guide_dialog.dart';
 import 'widgets/game_over_dialog.dart';
 import 'widgets/game_variant_picker_dialog.dart';
+import 'widgets/install_app_dialog.dart';
 import 'widgets/language_selector_dialog.dart';
 import 'widgets/pencil_die_widget.dart';
 import 'widgets/pencil_painters.dart';
@@ -83,7 +85,28 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
   @override
   void initState() {
     super.initState();
+    PwaInstallHelper.init();
+    PwaInstallHelper.stateVersion.addListener(_onPwaStateChanged);
     _initNewGame(['Spiller 1', 'Spiller 2'], _rules);
+  }
+
+  @override
+  void dispose() {
+    PwaInstallHelper.stateVersion.removeListener(_onPwaStateChanged);
+    super.dispose();
+  }
+
+  void _onPwaStateChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _openInstallAppDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => const InstallAppDialog(),
+    );
   }
 
   void _setLocale(AppLocale newLocale) {
@@ -731,6 +754,23 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
             onTap: _openRulesDialog,
             compact: isMobile,
           ),
+
+          if (!PwaInstallHelper.isStandalone)
+            Tooltip(
+              message: 'Install as mobile web app (iOS / Android) or scan QR code',
+              child: _HeaderPencilButton(
+                icon: Icons.install_mobile_rounded,
+                label: isMobile ? 'App' : 'Install App',
+                color: PwaInstallHelper.canPromptInstall
+                    ? PencilPalette.greenPencil
+                    : PencilPalette.bluePencil,
+                fillColor: PwaInstallHelper.canPromptInstall
+                    ? const Color(0xFFEAF6EC)
+                    : const Color(0xFFF3F8FC),
+                onTap: _openInstallAppDialog,
+                compact: isMobile,
+              ),
+            ),
 
           if (isGameComplete)
             _HeaderPencilButton(
