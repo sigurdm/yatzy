@@ -450,6 +450,26 @@ class PencilCirclePainter extends CustomPainter {
       path.lineTo(tipPt.dx, tipPt.dy);
     }
     canvas.drawPath(path, paint);
+
+    // Draw a lively 4-point pencil sparkle at the leading tip while actively sketching!
+    if (clampedProgress > 0.02 && clampedProgress < 0.98) {
+      final tip = pointAt(clampedProgress);
+      final sparkPaint = Paint()
+        ..color = color
+        ..style = PaintingStyle.fill;
+      const r = 5.2;
+      final sparkPath = Path()
+        ..moveTo(tip.dx, tip.dy - r)
+        ..lineTo(tip.dx + r * 0.3, tip.dy - r * 0.3)
+        ..lineTo(tip.dx + r, tip.dy)
+        ..lineTo(tip.dx + r * 0.3, tip.dy + r * 0.3)
+        ..lineTo(tip.dx, tip.dy + r)
+        ..lineTo(tip.dx - r * 0.3, tip.dy + r * 0.3)
+        ..lineTo(tip.dx - r, tip.dy)
+        ..lineTo(tip.dx - r * 0.3, tip.dy - r * 0.3)
+        ..close();
+      canvas.drawPath(sparkPath, sparkPaint);
+    }
   }
 
   @override
