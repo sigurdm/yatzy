@@ -229,6 +229,18 @@ void main() {
       expect(advice1.optimalHold, isNotNull);
       expect(advice1.optimalHold!.heldFaces, equals([6, 6, 6]));
 
+      // Hold alternatives should be populated and sorted descending by expectedStrategicValue
+      expect(advice1.holdAlternatives.length, greaterThan(3));
+      expect(advice1.holdAlternatives.first.heldFaces, equals([6, 6, 6]));
+      for (int i = 1; i < advice1.holdAlternatives.length; i++) {
+        expect(
+          advice1.holdAlternatives[i - 1].expectedStrategicValue,
+          greaterThanOrEqualTo(
+            advice1.holdAlternatives[i].expectedStrategicValue - 1e-9,
+          ),
+        );
+      }
+
       // On final roll (Roll 3) with four 6s ([6, 6, 6, 6, 2]), scoring Sixes (+6 above Par + huge bonus EV boost)
       // should rank #1 ahead of Four of a Kind or Chance
       final diceRoll3 = [
@@ -246,7 +258,48 @@ void main() {
       );
       expect(advice3.bestCategoryNow.category, equals(YatzyCategory.sixes));
       expect(advice3.bestCategoryNow.bonusEvDelta, greaterThan(5.0));
+      expect(advice3.rankOf(YatzyCategory.sixes), equals(1));
+      expect(advice3.deltaVsBestCategory(YatzyCategory.sixes), closeTo(0.0, 1e-9));
+      expect(
+        advice3.deltaVsBestCategory(YatzyCategory.fourOfAKind),
+        lessThan(0.0),
+      );
     });
+  });
+
+  testWidgets('Strategy Coach Mode shows Hold/Category Alternatives and opens Coach Guide Dialog', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1024, 768);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const PencilyYatzyApp());
+
+    // Enable Strategy Coach Mode
+    await tester.tap(find.text('🎓 Coach'));
+    await tester.pumpAndSettle();
+
+    // Verify Hold & Category Alternatives are shown in the Coach banner
+    expect(find.text('Hold-alternativer:'), findsOneWidget);
+    expect(find.text('Felt-alternativer:'), findsOneWidget);
+
+    // Tap the "📖 Sådan regner Coachen" chip to open CoachGuideDialog
+    final guideBtn = find.byKey(const Key('open_coach_guide_button'));
+    expect(guideBtn, findsOneWidget);
+    await tester.tap(guideBtn);
+    await tester.pumpAndSettle();
+
+    // Verify CoachGuideDialog displays the mathematical formula and live comparison table
+    expect(
+      find.text(
+        'Strategic EV(c)  =  Raw Points(c)  −  Opportunity Cost(c)  +  Δ Upper Bonus EV(c)',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text('📊 Live Strategisk Sammenligning for Nuværende Kast'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Turn highlight retention, Undo button, and Game Variant Dropdown with explanations work on mobile screen', (WidgetTester tester) async {

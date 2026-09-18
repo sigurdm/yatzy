@@ -3015,4 +3015,316 @@ class AppStrings {
       pl: '★ Najlepsze pole teraz: $categoryName ($scoreFormatted) [Strategiczne EV: $netStr$bonusNote]',
     );
   }
+
+  String coachCurrentHoldComparison({
+    required List<int> curFaces,
+    required double curEvPoints,
+    required double deltaStrategicEv,
+  }) {
+    final facesStr = curFaces.isEmpty ? '—' : '[${curFaces.join(',')}]';
+    final ptsStr = curEvPoints.toStringAsFixed(1);
+    final dStr = deltaStrategicEv.toStringAsFixed(1);
+    return _pick(
+      da: 'Dit nuværende hold $facesStr: ~$ptsStr p ($dStr EV ift. bedst)',
+      en: 'Your current hold $facesStr: ~$ptsStr p ($dStr EV vs best)',
+      sv: 'Ditt nuvarande val $facesStr: ~$ptsStr p ($dStr EV mot bäst)',
+      no: 'Ditt nåværende hold $facesStr: ~$ptsStr p ($dStr EV mot best)',
+      fi: 'Nykyinen valintasi $facesStr: ~$ptsStr p ($dStr EV vrt. paras)',
+      is_: 'Núverandi val $facesStr: ~$ptsStr p ($dStr EV m.v. best)',
+      de: 'Dein aktueller Halt $facesStr: ~$ptsStr P. ($dStr EV ggü. Bestwert)',
+      nl: 'Jouw huidige keuze $facesStr: ~$ptsStr p ($dStr EV t.o.v. beste)',
+      fr: 'Votre garde actuelle $facesStr : ~$ptsStr p ($dStr EV vs optimal)',
+      es: 'Tu selección actual $facesStr: ~$ptsStr p ($dStr EV vs óptimo)',
+      it: 'Scelta attuale $facesStr: ~$ptsStr p ($dStr EV vs migliore)',
+      pl: 'Twój obecny wybór $facesStr: ~$ptsStr pkt ($dStr EV vs najlepszy)',
+    );
+  }
+
+  String get coachHoldAlternativesLabel => _pick(
+        da: 'Hold-alternativer:',
+        en: 'Hold alternatives:',
+        sv: 'Håll-alternativ:',
+        no: 'Hold-alternativer:',
+        fi: 'Pitovaihtoehdot:',
+        is_: 'Valkostir (halda):',
+        de: 'Halte-Alternativen:',
+        nl: 'Vasthoud-opties:',
+        fr: 'Alternatives de garde :',
+        es: 'Alternativas de dados:',
+        it: 'Alternative dadi:',
+        pl: 'Alternatywy zatrzymania:',
+      );
+
+  String get coachCategoryAlternativesLabel => _pick(
+        da: 'Felt-alternativer:',
+        en: 'Slot alternatives:',
+        sv: 'Fält-alternativ:',
+        no: 'Felt-alternativer:',
+        fi: 'Rivivaihtoehdot:',
+        is_: 'Valkostir (reitir):',
+        de: 'Feld-Alternativen:',
+        nl: 'Vak-opties:',
+        fr: 'Alternatives de case :',
+        es: 'Alternativas de casilla:',
+        it: 'Alternative casella:',
+        pl: 'Alternatywy pól:',
+      );
+
+  String coachFormatHoldShort(List<int> faces, int totalDiceCount) {
+    if (faces.isEmpty) {
+      return _pick(
+        da: 'Kast alle',
+        en: 'Reroll all',
+        sv: 'Slå om alla',
+        no: 'Kast alle',
+        fi: 'Heitä kaikki',
+        is_: 'Kasta öllum',
+        de: 'Alle würfeln',
+        nl: 'Alles gooien',
+        fr: 'Tout relancer',
+        es: 'Tirar todos',
+        it: 'Ritira tutti',
+        pl: 'Przerzuć',
+      );
+    }
+    if (faces.length == totalDiceCount) {
+      return _pick(
+        da: 'Behold alle',
+        en: 'Keep all',
+        sv: 'Behåll alla',
+        no: 'Behold alle',
+        fi: 'Pidä kaikki',
+        is_: 'Halda öllum',
+        de: 'Alle halten',
+        nl: 'Houd alles',
+        fr: 'Tout garder',
+        es: 'Guardar todos',
+        it: 'Tieni tutti',
+        pl: 'Zatrzymaj wszystkie',
+      );
+    }
+    return '[${faces.join(',')}]';
+  }
+
+  String get coachHowItWorksButton => _pick(
+        da: '📖 Sådan virker Coachen',
+        en: '📖 How Coach Works',
+        sv: '📖 Så fungerar Coachen',
+        no: '📖 Slik virker Coachen',
+        fi: '📖 Miten Valmentaja toimii',
+        is_: '📖 Hvernig Þjálfarinn virkar',
+        de: '📖 Wie der Coach rechnet',
+        nl: '📖 Hoe de Coach werkt',
+        fr: '📖 Comment fonctionne le Coach',
+        es: '📖 Cómo funciona el Coach',
+        it: '📖 Come funziona il Coach',
+        pl: '📖 Jak działa Trener',
+      );
+
+  String get coachGuideTitle => _pick(
+        da: '🎓 Sådan regner Strategi-Coachen (Matematik & EV)',
+        en: '🎓 How the Strategy Coach Works (Mathematics & EV)',
+        sv: '🎓 Så räknar Strategi-Coachen (Matematik & EV)',
+        no: '🎓 Slik regner Strategi-Coachen (Matematikk & EV)',
+        fi: '🎓 Miten Strategiavalmentaja laskee (Matematiikka & EV)',
+        is_: '🎓 Hvernig Herkænskuþjálfarinn reiknar (Stærðfræði & EV)',
+        de: '🎓 Wie der Strategie-Coach rechnet (Mathematik & EV)',
+        nl: '🎓 Hoe de Strategie-Coach rekent (Wiskunde & EV)',
+        fr: '🎓 Comment calcule le Coach Stratégique (Mathématiques & EV)',
+        es: '🎓 Cómo calcula el Coach Estratégico (Matemáticas y EV)',
+        it: '🎓 Come calcola il Coach Strategico (Matematica ed EV)',
+        pl: '🎓 Jak liczy Trener Strategii (Matematyka i EV)',
+      );
+
+  String get coachGuideSubtitle => _pick(
+        da: 'Eksakt baglæns induktion (Bellman-ligninger), alternativomkostning og +50p bonus-skyggepris',
+        en: 'Exact backward induction (Bellman equations), opportunity cost & Upper Bonus shadow pricing',
+        sv: 'Exakt bakåtinduktion (Bellman-ekvationer), alternativkostnad och +50p bonusskuggpris',
+        no: 'Eksakt baklengs induksjon (Bellman-ligninger), alternativkostnad og +50p bonusskyggepris',
+        fi: 'Eksakti takaperin induktio, vaihtoehtoiskustannus ja yläosan bonuksen varjohinta',
+        is_: 'Nákvæm afturábak treysting, fórnarkostnaður og bónus-skuggaverð',
+        de: 'Exakte Rückwärtsinduktion (Bellman-Gleichungen), Opportunitätskosten & Bonus-Schattenpreis',
+        nl: 'Exacte achterwaartse inductie, opportuniteitskosten & bonus-schaduwprijs',
+        fr: 'Induction à rebours exacte (équations de Bellman), coût d\'opportunité et prix fictif du bonus',
+        es: 'Inducción hacia atrás exacta (ecuaciones de Bellman), costo de oportunidad y valor sombra del bono',
+        it: 'Induzione a ritroso esatta, costo opportunità e prezzo ombra del bonus superiore',
+        pl: 'Dokładna indukcja wsteczna (równania Bellmana), koszt alternatywny i cena ukryta premii',
+      );
+
+  String get coachLiveTableTitle => _pick(
+        da: '📊 Live Strategisk Sammenligning for Nuværende Kast',
+        en: '📊 Live Strategic Comparison for Your Current Roll',
+        sv: '📊 Live Strategisk Jämförelse för Aktuellt Kast',
+        no: '📊 Live Strategisk Sammenligning for Nåværende Kast',
+        fi: '📊 Reaaliaikainen strateginen vertailu nykyiselle heitolle',
+        is_: '📊 Lifandi herkænskusamanburður fyrir núverandi kast',
+        de: '📊 Live-Strategievergleich für deinen aktuellen Wurf',
+        nl: '📊 Live Strategische Vergelijking voor je Huidige Worp',
+        fr: '📊 Comparaison Stratégique en Direct pour votre Lancer Actuel',
+        es: '📊 Comparación Estratégica en Vivo para tu Tirada Actual',
+        it: '📊 Confronto Strategico Live per il Lancio Attuale',
+        pl: '📊 Strategiczne Porównanie na Żywo dla Obecnego Rzutu',
+      );
+
+  List<RulesSectionData> coachGuideSections(YatzyGameRules rules) {
+    final bonusPts = rules.upperBonusPoints;
+    return [
+      RulesSectionData(
+        title: _pick(
+          da: '1. Hvorfor flest rå point her-og-nu ofte er en fejl!',
+          en: '1. Why "Highest Raw Points Right Now" is Often a Trap!',
+          sv: '1. Varför "flest råa poäng just nu" ofta är en fälla!',
+          no: '1. Hvorfor «flest råpoeng akkurat nå» ofte er en felle!',
+          fi: '1. Miksi "eniten pisteitä heti" on usein ansa!',
+          is_: '1. Af hverju „flest stig strax“ er oft gildra!',
+          de: '1. Warum „meiste Rohpunkte sofort“ oft eine Falle ist!',
+          nl: '1. Waarom "meeste directe punten" vaak een valkuil is!',
+          fr: '1. Pourquoi « le plus de points bruts immédiats » est souvent un piège !',
+          es: '1. ¡Por qué "más puntos directos ahora mismo" suele ser una trampa!',
+          it: '1. Perché "più punti immediati" è spesso una trappola!',
+          pl: '1. Dlaczego „najwięcej punktów naraz” to często pułapka!',
+        ),
+        bullets: [
+          _pick(
+            da: 'Begyndere vælger næsten altid det felt, der giver flest point lige nu (f.eks. 20 point i Chance på runde 2, eller 16 point i To Par i stedet for 12 point = 0 Par i 4\'ere).',
+            en: 'Beginners often pick whichever category gives the highest immediate score (e.g., burning Chance for 20p on Turn 2, or taking 16p in Two Pairs instead of 12p = Par in Fours).',
+            sv: 'Nybörjare väljer ofta den ruta som ger flest poäng direkt (t.ex. bränna Chans för 20p i runda 2).',
+            no: 'Nybegynnere velger ofte feltet som gir flest poeng der og da (f.eks. bruke Sjanse for 20p i runde 2).',
+            fi: 'Aloittelijat valitsevat usein suurimmat välittömät pisteet (esim. Sattuman käyttäminen 20 pisteeseen vuorolla 2).',
+            is_: 'Byrjendur velja oft reitinn sem gefur flest stig strax (t.d. eyða Áhættu fyrir 20 stig í 2. umferð).',
+            de: 'Anfänger wählen oft das Feld mit den meisten sofortigen Punkten (z. B. Chance für 20 P. in Runde 2 verbrauchen).',
+            nl: 'Beginners kiezen vaak het vakje met de hoogste directe score (bijv. Kans vroeg gebruiken voor 20p).',
+            fr: 'Les débutants choisissent souvent la case offrant le plus de points immédiats (ex. gaspiller Chance pour 20p au tour 2).',
+            es: 'Los principiantes suelen elegir la casilla que da más puntos inmediatos (p. ej. gastar Libre por 20p en el turno 2).',
+            it: 'I principianti scelgono spesso la casella con più punti immediati (es. bruciare Libera per 20p al turno 2).',
+            pl: 'Początkujący często wybierają pole dające najwięcej punktów od razu (np. zużycie Szansy za 20 pkt w 2. turze).',
+          ),
+          _pick(
+            da: 'Coachen evaluerer i stedet hvert åbent felt med formlen: Strategisk EV(c) = Rå Point(c) − Alternativomkostning(c) + Δ Bonus-EV(c).',
+            en: 'Instead, the Coach evaluates every open slot using: Strategic EV(c) = Raw Points(c) − Opportunity Cost(c) + Δ Upper Bonus EV(c).',
+            sv: 'Coachen utvärderar istället varje öppen ruta med: Strategiskt EV(c) = Råpoäng(c) − Alternativkostnad(c) + Δ Bonus-EV(c).',
+            no: 'Coachen vurderer i stedet hvert åpent felt med: Strategisk EV(c) = Råpoeng(c) − Alternativkostnad(c) + Δ Bonus-EV(c).',
+            fi: 'Valmentaja arvioi jokaisen avoimen rivin kaavalla: Strateginen EV(c) = Pisteet(c) − Vaihtoehtoiskustannus(c) + Δ Bonus-EV(c).',
+            is_: 'Þjálfarinn metur hvern opinn reit með: Strategískt EV(c) = Stig(c) − Fórnarkostnaður(c) + Δ Bónus-EV(c).',
+            de: 'Der Coach bewertet jedes offene Feld nach: Strategie-EV(c) = Rohpunkte(c) − Opportunitätskosten(c) + Δ Bonus-EV(c).',
+            nl: 'De Coach beoordeelt elk open vakje via: Strategische EV(c) = Directe Punten(c) − Opportuniteitskosten(c) + Δ Bonus-EV(c).',
+            fr: 'Le Coach évalue chaque case ouverte selon : EV Stratégique(c) = Points Bruts(c) − Coût d\'Opportunité(c) + Δ EV Bonus(c).',
+            es: 'El Coach evalúa cada casilla abierta mediante: EV Estratégico(c) = Puntos Directos(c) − Costo de Oportunidad(c) + Δ EV Bono(c).',
+            it: 'Il Coach valuta ogni casella aperta con: EV Strategico(c) = Punti(c) − Costo Opportunità(c) + Δ EV Bonus(c).',
+            pl: 'Trener ocenia każde wolne pole według wzoru: Strategiczne EV(c) = Punkty(c) − Koszt Alternatywny(c) + Δ EV Premii(c).',
+          ),
+        ],
+      ),
+      RulesSectionData(
+        title: _pick(
+          da: '2. Alternativomkostning & "Skraldespands-felter" (1\'ere & 2\'ere)',
+          en: '2. Opportunity Cost & Smart "Dump Slots" (Ones & Twos)',
+          sv: '2. Alternativkostnad & Smarta "Slaskrutor" (1:or & 2:or)',
+          no: '2. Alternativkostnad & Smarte «Dump-felt» (1-ere & 2-ere)',
+          fi: '2. Vaihtoehtoiskustannus ja "roskakoririvit" (Ykköset & Kakkoset)',
+          is_: '2. Fórnarkostnaður og „ruslareitir“ (Ásar & Tvistar)',
+          de: '2. Opportunitätskosten & „Streicher-Felder“ (1er & 2er)',
+          nl: '2. Opportuniteitskosten & Slimme "Wegstreep-vakjes" (Enen & Tweeën)',
+          fr: '2. Coût d\'Opportunité et Cases de Défausse (As & Deux)',
+          es: '2. Costo de Oportunidad y Casillas de Descarte (Unos y Doses)',
+          it: '2. Costo Opportunità e Caselle di Scarto (Uno e Due)',
+          pl: '2. Koszt Alternatywny i „Pola Zrzutowe” (Jedynki i Dwójki)',
+        ),
+        bullets: [
+          _pick(
+            da: 'Når du udfylder et felt nu, mister du den score, feltet i gennemsnit ville give senere i spillet (Alternativomkostning). Chance har en høj fremtidig værdi (~22,5p) som sikkerhedsnet, mens 1\'ere (~2,5p) og 2\'ere (~5,2p) er billige at ofre.',
+            en: 'Filling a category now sacrifices what that slot would average on a future turn (Opportunity Cost). Chance has a high future value (~22.5p) as a late-game safety net, whereas Ones (~2.5p) and Twos (~5.2p) cost very little to sacrifice.',
+            sv: 'Att fylla i en ruta nu offrar vad rutan i snitt ger senare. Chans har högt framtida värde (~22,5p), medan 1:or och 2:or är billiga att offra.',
+            no: 'Å fylle ut et felt nå ofrer hva feltet i snitt gir senere. Sjanse har høy fremtidig verdi (~22,5p), mens 1-ere og 2-ere er billige å ofre.',
+            fi: 'Rivin täyttäminen nyt uhraa sen odotetun tulevan pistearvon. Sattuma on arvokas (~22,5p), kun taas Ykköset ja Kakkoset ovat edullisia uhrata.',
+            is_: 'Að fylla í reit núna fórnar væntum stigum síðar. Áhætta er dýrmæt (~22,5 stig), en Ásar og Tvistar kosta lítið að fórna.',
+            de: 'Ein Feld jetzt zu füllen opfert seinen zukünftigen Erwartungswert. Chance ist später ~22,5 P. wert, während 1er und 2er kaum Verlust bedeuten.',
+            nl: 'Een vakje nu invullen kost wat het later gemiddeld oplevert. Kans is ~22,5p waard als vangnet, terwijl Enen en Tweeën goedkoop op te offeren zijn.',
+            fr: 'Remplir une case sacrifie sa valeur future moyenne. Chance vaut ~22,5p en fin de partie, alors que les As et Deux coûtent très peu à sacrifier.',
+            es: 'Llenar una casilla ahora sacrifica su promedio futuro. Libre vale ~22,5p como red de seguridad, mientras que Unos y Doses cuestan muy poco sacrificar.',
+            it: 'Riempire una casella ora sacrifica il suo valore futuro medio. Libera vale ~22,5p come paracadute, mentre Uno e Due costano pochissimo.',
+            pl: 'Wypełnienie pola teraz poświęca jego średnią przyszłą wartość. Szansa jest warta ~22,5 pkt jako koło ratunkowe, a Jedynki i Dwójki kosztują niewiele.',
+          ),
+          _pick(
+            da: 'Derfor anbefaler Coachen ofte at tage -2 eller -3 på 1\'ere på et dårligt kast i stedet for at brænde Chance eller tage et stort minus på 5\'ere/6\'ere!',
+            en: 'That is why the Coach often recommends taking -2 or -3 on Ones after a bad roll rather than wasting Chance or taking a heavy deficit on Fives/Sixes!',
+            sv: 'Därför rekommenderar Coachen ofta att ta -2 eller -3 på 1:or vid ett dåligt kast i stället för att slösa Chans!',
+            no: 'Derfor anbefaler Coachen ofte å ta -2 eller -3 på 1-ere ved et dårlig kast fremfor å kaste bort Sjanse!',
+            fi: 'Siksi Valmentaja suosittelee usein ottamaan -2 tai -3 Ykkösiin huonolla heitolla Sattuman tuhlaamisen sijaan!',
+            is_: 'Þess vegna mælir Þjálfarinn oft með -2 eða -3 á Ása eftir slæmt kast frekar en að eyða Áhættu!',
+            de: 'Darum empfiehlt der Coach bei einem Fehlwurf oft -2 oder -3 auf 1er, statt Chance zu verschwenden!',
+            nl: 'Daarom adviseert de Coach bij een slechte worp vaak -2 of -3 op Enen in plaats van Kans te verspillen!',
+            fr: 'C\'est pourquoi le Coach recommande souvent de prendre -2 ou -3 aux As sur un mauvais lancer plutôt que de gaspiller Chance !',
+            es: '¡Por eso el Coach suele recomendar tomar -2 o -3 en Unos tras una mala tirada en lugar de malgastar Libre!',
+            it: 'Ecco perché il Coach consiglia spesso -2 o -3 sugli Uno dopo un brutto tiro invece di sprecare Libera!',
+            pl: 'Dlatego po słabym rzucie Trener często zaleca wpisanie -2 lub -3 w Jedynki zamiast marnowania Szansy!',
+          ),
+        ],
+      ),
+      RulesSectionData(
+        title: _pick(
+          da: '3. Øverste Bonus-Skyggepris (+$bonusPts p ved ±0)',
+          en: '3. Upper Section Bonus Shadow Price (+$bonusPts p at ±0)',
+          sv: '3. Övre Bonusskuggpris (+$bonusPts p vid ±0)',
+          no: '3. Øvre Bonusskyggepris (+$bonusPts p ved ±0)',
+          fi: '3. Yläosan bonuksen varjohinta (+$bonusPts p tasolla ±0)',
+          is_: '3. Skuggaverð Efri Bónuss (+$bonusPts stig við ±0)',
+          de: '3. Oberer Bonus-Schattenpreis (+$bonusPts P. bei ±0)',
+          nl: '3. Bovenste Bonus Schaduwprijs (+$bonusPts p bij ±0)',
+          fr: '3. Prix Fictif du Bonus Supérieur (+$bonusPts p à ±0)',
+          es: '3. Valor Sombra del Bono Superior (+$bonusPts p en ±0)',
+          it: '3. Prezzo Ombra del Bonus Superiore (+$bonusPts p a ±0)',
+          pl: '3. Cena Ukryta Premii Górnej (+$bonusPts pkt przy ±0)',
+        ),
+        bullets: [
+          _pick(
+            da: 'At rulle fire 6\'ere (24p = +6 over Par) giver ikke kun 24 rå point — de +6 i buffer øger din sandsynlighed for at nå +$bonusPts p bonussen markant (ofte +12 til +15 ekstra forventede bonuspoint!).',
+            en: 'Rolling four Sixes (24p = +6 above Par) doesn\'t just score 24 points — that +6 buffer dramatically increases your probability of earning the +$bonusPts p Upper Bonus (often adding +12 to +15 extra expected bonus points!).',
+            sv: 'Att slå fyra 6:or (24p = +6 över Par) ger inte bara 24 poäng — +6 i buffert ökar chansen till +$bonusPts p bonusen rejält (+12 till +15 extra bonus-EV!).',
+            no: 'Å kaste fire 6-ere (24p = +6 over Par) gir ikke bare 24 poeng — +6 i buffer øker sjansen for +$bonusPts p bonusen kraftig (+12 til +15 ekstra bonus-EV!).',
+            fi: 'Neljän kuutosen heittäminen (+6 yli Parin) ei anna vain 24 pistettä — +6 puskuri nostaa +$bonusPts p bonuksen todennäköisyyttä huomattavasti (+12..+15 bonus-EV)!',
+            is_: 'Fjórir sexar (+6 yfir Par) gefa ekki bara 24 stig — +6 varasjóðurinn eykur líkur á +$bonusPts stiga bónusnum verulega (+12 til +15 bónus-EV)!',
+            de: 'Vier 6er (24 P. = +6 über Par) bringen nicht nur 24 Punkte — der +6-Puffer steigert die Chance auf den +$bonusPts-P.-Bonus massiv (+12 bis +15 Bonus-EV!).',
+            nl: 'Vier zessen (24p = +6 boven Par) geeft niet alleen 24 punten — die +6 buffer verhoogt je kans op de +$bonusPts p bonus enorm (+12 tot +15 extra bonus-EV!).',
+            fr: 'Obtenir quatre 6 (+6 au-dessus du Par) ne donne pas seulement 24 points — ce coussin de +6 augmente fortement la probabilité du bonus de +$bonusPts p (+12 à +15 EV bonus !).',
+            es: 'Sacar cuatro 6 (+6 sobre el Par) no solo da 24 puntos: ¡ese colchón de +6 dispara tu probabilidad de ganar el bono de +$bonusPts p (+12 a +15 EV extra)!',
+            it: 'Fare quattro 6 (+6 sopra il Par) non dà solo 24 punti: quel margine di +6 aumenta enormemente la probabilità del bonus da +$bonusPts p (+12..+15 EV bonus)!',
+            pl: 'Wyrzucenie czterech szóstek (+6 ponad Par) daje nie tylko 24 pkt — zapas +6 znacząco zwiększa szansę na premię +$bonusPts pkt (+12 do +15 pkt EV)!',
+          ),
+        ],
+      ),
+      RulesSectionData(
+        title: _pick(
+          da: '4. Eksakt Baglæns Induktion på Terninge-Hold (Kast 1 → 2 → 3)',
+          en: '4. Exact Within-Turn Backward Induction (Roll 1 → 2 → 3)',
+          sv: '4. Exakt Bakåtinduktion för Tärningsval (Kast 1 → 2 → 3)',
+          no: '4. Eksakt Baklengs Induksjon for Terninghold (Kast 1 → 2 → 3)',
+          fi: '4. Eksakti takaperin induktio noppien pidolle (Heitto 1 → 2 → 3)',
+          is_: '4. Nákvæm afturábak reikningur fyrir teningaval (Kast 1 → 2 → 3)',
+          de: '4. Exakte Rückwärtsinduktion beim Würfelhalten (Wurf 1 → 2 → 3)',
+          nl: '4. Exacte Achterwaartse Inductie voor Dobbelstenen (Worp 1 → 2 → 3)',
+          fr: '4. Induction à Rebours Exacte sur les Gardes (Lancer 1 → 2 → 3)',
+          es: '4. Inducción Hacia Atrás Exacta en la Retención de Dados (Tiro 1 → 2 → 3)',
+          it: '4. Induzione a Ritroso Esatta sui Dadi Tenuti (Tiro 1 → 2 → 3)',
+          pl: '4. Dokładna Indukcja Wsteczna dla Zatrzymywania Kości (Rzut 1 → 2 → 3)',
+        ),
+        bullets: [
+          _pick(
+            da: 'Med 5 sekssidede terninger findes der præcis 252 unikke terningekombinationer og 462 mulige delmængder at beholde. Coachen beregner de eksakte multinomiale overgangssandsynligheder baglæns fra Kast 3 til Kast 1 på under 2 millisekunder!',
+            en: 'With 5 six-sided dice, there are exactly 252 unique dice combinations and 462 possible held sub-multisets. The Coach computes exact multinomial transition probabilities backward from Roll 3 to Roll 1 in under 2 milliseconds!',
+            sv: 'Med 5 sexsidiga tärningar finns exakt 252 unika kombinationer och 462 delmängder att behålla. Coachen beräknar de exakta sannolikheterna baklänges från Kast 3 till Kast 1 på under 2 millisekunder!',
+            no: 'Med 5 sekssidede terninger finnes det nøyaktig 252 unike kombinasjoner og 462 delmengder å beholde. Coachen beregner de eksakte sannolikhetene baklengs fra Kast 3 til Kast 1 på under 2 millisekunder!',
+            fi: 'Viidellä d6-nopalla on täsmälleen 252 uniikkia yhdistelmää ja 462 osajoukkoa. Valmentaja laskee tarkat multinomiaaliset siirtymätodennäköisyydet Heitosta 3 Heittoon 1 alle 2 millisekunnissa!',
+            is_: 'Með 5 sexhliða teningum eru nákvæmlega 252 samsetningar og 462 hlutmengi. Þjálfarinn reiknar nákvæmar líkur afturábak frá Kasti 3 til Kasts 1 á innan við 2 millisekúndum!',
+            de: 'Bei 5 sechsseitigen Würfeln gibt es genau 252 Kombinationen und 462 Haltemuster. Der Coach berechnet alle exakten Multinomial-Übergangswahrscheinlichkeiten von Wurf 3 bis Wurf 1 in unter 2 Millisekunden!',
+            nl: 'Met 5 zeszijdige dobbelstenen zijn er exact 252 combinaties en 462 vasthoud-patronen. De Coach berekent alle exacte multinomiale overgangskansen achterwaarts van Worp 3 naar Worp 1 in minder dan 2 milliseconden!',
+            fr: 'Avec 5 dés à 6 faces, il existe exactement 252 combinaisons uniques et 462 sous-ensembles de garde. Le Coach calcule toutes les probabilités multinomiales exactes du Lancer 3 au Lancer 1 en moins de 2 millisecondes !',
+            es: 'Con 5 dados de 6 caras, existen exactamente 252 combinaciones únicas y 462 subconjuntos de retención. ¡El Coach calcula todas las probabilidades multinomiales exactas del Tiro 3 al Tiro 1 en menos de 2 milisegundos!',
+            it: 'Con 5 dadi a 6 facce esistono esattamente 252 combinazioni e 462 sottoinsiemi. Il Coach calcola tutte le probabilità multinomiali esatte dal Tiro 3 al Tiro 1 in meno di 2 millisecondi!',
+            pl: 'Dla 5 sześciennych kości istnieją dokładnie 252 kombinacje i 462 podzbiory zatrzymania. Trener oblicza dokładne prawdopodobieństwa wielomianowe wstecz od Rzutu 3 do Rzutu 1 w mniej niż 2 milisekundy!',
+          ),
+        ],
+      ),
+    ];
+  }
 }

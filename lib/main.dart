@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'l10n/app_strings.dart';
 import 'models/yatzy_models.dart';
 import 'models/yatzy_strategy_solver.dart';
+import 'widgets/coach_guide_dialog.dart';
 import 'widgets/game_over_dialog.dart';
 import 'widgets/game_variant_picker_dialog.dart';
 import 'widgets/language_selector_dialog.dart';
@@ -395,7 +396,31 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
   void _openRulesDialog() {
     showDialog(
       context: context,
-      builder: (ctx) => RulesDialog(strings: _strings),
+      builder: (ctx) => RulesDialog(
+        strings: _strings,
+        onOpenCoachGuide: () => _openCoachGuideDialog(),
+      ),
+    );
+  }
+
+  void _openCoachGuideDialog([TurnCoachAdvice? existingAdvice]) {
+    final isGameComplete = _players.every((p) => p.isComplete);
+    final activePlayer = _players[_activePlayerIndex];
+    final advice = existingAdvice ??
+        ((_rollsUsed > 0 && !isGameComplete && !_isRolling)
+            ? YatzyStrategySolver.analyzeTurn(
+                rules: _rules,
+                player: activePlayer,
+                dice: _dice,
+                rollsUsed: _rollsUsed,
+              )
+            : null);
+    CoachGuideDialog.show(
+      context,
+      strings: _strings,
+      rules: _rules,
+      currentAdvice: advice,
+      onSelectHoldIndices: _applyOptimalHold,
     );
   }
 
@@ -477,7 +502,10 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
                                 coachAdvice!.optimalHold!.holdIndices,
                               )
                           : null,
+                      onSelectHoldIndices: _applyOptimalHold,
                       onSelectCoachCategory: _assignCategoryScore,
+                      onOpenCoachGuide: () =>
+                          _openCoachGuideDialog(coachAdvice),
                       rules: _rules,
                     ),
                   ),
@@ -630,6 +658,19 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
               compact: isMobile,
             ),
           ),
+
+          if (_coachModeEnabled)
+            Tooltip(
+              message: s.coachGuideTitle,
+              child: _HeaderPencilButton(
+                icon: Icons.auto_stories_outlined,
+                label: s.coachHowItWorksButton,
+                color: PencilPalette.bluePencil,
+                fillColor: const Color(0xFFE8F1FA),
+                onTap: () => _openCoachGuideDialog(),
+                compact: isMobile,
+              ),
+            ),
 
           // ALWAYS VISIBLE Undo button in header bar
           Tooltip(

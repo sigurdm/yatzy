@@ -762,9 +762,10 @@ class _PencilScorecardWidgetState extends State<PencilScorecardWidget> {
       final isPositivePreview =
           category.isUpper ? previewScore >= 0 : previewScore > 0;
 
-      final isCoachRecommended = widget.coachAdvice != null &&
-          widget.coachAdvice!.categoryRankings.isNotEmpty &&
-          widget.coachAdvice!.bestCategoryNow.category == category;
+      final coachEval = widget.coachAdvice?.evaluationFor(category);
+      final coachRank = widget.coachAdvice?.rankOf(category);
+      final coachDelta = widget.coachAdvice?.deltaVsBestCategory(category);
+      final isCoachRecommended = coachRank == 1;
 
       return _InteractivePreviewCell(
         key: Key('open_cell_${category.name}_$playerIdx'),
@@ -775,6 +776,9 @@ class _PencilScorecardWidgetState extends State<PencilScorecardWidget> {
         isUpper: category.isUpper,
         previewScore: previewScore,
         isCoachRecommended: isCoachRecommended,
+        coachEval: coachEval,
+        coachRank: coachRank,
+        coachDelta: coachDelta,
         onTap: () => widget.onSelectCategory(category),
       );
     }
@@ -1036,6 +1040,9 @@ class _InteractivePreviewCell extends StatefulWidget {
   final bool isUpper;
   final int previewScore;
   final bool isCoachRecommended;
+  final CategoryStrategyEvaluation? coachEval;
+  final int? coachRank;
+  final double? coachDelta;
   final VoidCallback onTap;
 
   const _InteractivePreviewCell({
@@ -1047,6 +1054,9 @@ class _InteractivePreviewCell extends StatefulWidget {
     required this.isUpper,
     required this.previewScore,
     this.isCoachRecommended = false,
+    this.coachEval,
+    this.coachRank,
+    this.coachDelta,
     required this.onTap,
   });
 
@@ -1077,7 +1087,28 @@ class _InteractivePreviewCellState extends State<_InteractivePreviewCell> {
       previewColor = PencilPalette.bluePencil.withValues(alpha: 0.65);
     }
 
-    return MouseRegion(
+    final eval = widget.coachEval;
+    String? evSubLabel;
+    String? tooltipMsg;
+    if (eval != null) {
+      final netSign = eval.strategicNetValue >= 0 ? '+' : '';
+      final netStr = '$netSign${eval.strategicNetValue.toStringAsFixed(1)}';
+      if (widget.isCoachRecommended) {
+        evSubLabel = 'EV $netStr ★';
+      } else if (widget.coachDelta != null) {
+        final dSign = widget.coachDelta! >= 0 ? '+' : '';
+        evSubLabel =
+            'EV $netStr ($dSign${widget.coachDelta!.toStringAsFixed(1)})';
+      } else {
+        evSubLabel = 'EV $netStr';
+      }
+      final bonusSign = eval.bonusEvDelta >= 0 ? '+' : '';
+      final rankStr = widget.coachRank != null ? '#${widget.coachRank} · ' : '';
+      tooltipMsg =
+          '${rankStr}Raw: ${eval.rawPointsContribution}p | Opp. Cost: -${eval.expectedFuturePoints.toStringAsFixed(1)} | Bonus EV: $bonusSign${eval.bonusEvDelta.toStringAsFixed(1)} | Net EV: $netStr';
+    }
+
+    Widget cell = MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -1106,7 +1137,7 @@ class _InteractivePreviewCellState extends State<_InteractivePreviewCell> {
               if (_isHovered || widget.isCoachRecommended)
                 Positioned.fill(
                   child: Padding(
-                    padding: const EdgeInsets.all(2.5),
+                    padding: const EdgeInsets.all(2.0),
                     child: CustomPaint(
                       painter: PencilBoxPainter(
                         borderColor: _isHovered
@@ -1119,41 +1150,71 @@ class _InteractivePreviewCellState extends State<_InteractivePreviewCell> {
                     ),
                   ),
                 ),
-              Row(
+              Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (widget.isCoachRecommended) ...[
-                    const Text(
-                      '★',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: PencilPalette.greenPencil,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.isCoachRecommended) ...[
+                        const Text(
+                          '★',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: PencilPalette.greenPencil,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                      ],
+                      Text(
+                        widget.formattedPreview,
+                        style: GoogleFonts.patrickHand(
+                          fontSize: evSubLabel != null
+                              ? (_isHovered ? 16.5 : 15.5)
+                              : (_isHovered ? 19 : 17.5),
+                          height: 1.0,
+                          fontWeight: (_isHovered || widget.isCoachRecommended)
+                              ? FontWeight.bold
+                              : FontWeight.w500,
+                          fontStyle: (_isHovered || widget.isCoachRecommended)
+                              ? FontStyle.normal
+                              : FontStyle.italic,
+                          color: previewColor,
+                        ),
+                      ),
+                      if (_isHovered) ...[
+                        const SizedBox(width: 2),
+                        const Icon(
+                          Icons.check,
+                          size: 12,
+                          color: PencilPalette.bluePencil,
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (evSubLabel != null)
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: Text(
+                          evSubLabel,
+                          style: GoogleFonts.patrickHand(
+                            fontSize: 10.5,
+                            height: 1.0,
+                            fontWeight: widget.isCoachRecommended
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                            color: widget.isCoachRecommended
+                                ? PencilPalette.greenPencil
+                                : PencilPalette.graphiteMedium,
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 2),
-                  ],
-                  Text(
-                    widget.formattedPreview,
-                    style: GoogleFonts.patrickHand(
-                      fontSize: _isHovered ? 19 : 17.5,
-                      fontWeight: (_isHovered || widget.isCoachRecommended)
-                          ? FontWeight.bold
-                          : FontWeight.w500,
-                      fontStyle: (_isHovered || widget.isCoachRecommended)
-                          ? FontStyle.normal
-                          : FontStyle.italic,
-                      color: previewColor,
-                    ),
-                  ),
-                  if (_isHovered) ...[
-                    const SizedBox(width: 2),
-                    const Icon(
-                      Icons.check,
-                      size: 13,
-                      color: PencilPalette.bluePencil,
-                    ),
-                  ],
                 ],
               ),
             ],
@@ -1161,5 +1222,14 @@ class _InteractivePreviewCellState extends State<_InteractivePreviewCell> {
         ),
       ),
     );
+
+    if (tooltipMsg != null) {
+      return Tooltip(
+        message: tooltipMsg,
+        waitDuration: const Duration(milliseconds: 200),
+        child: cell,
+      );
+    }
+    return cell;
   }
 }

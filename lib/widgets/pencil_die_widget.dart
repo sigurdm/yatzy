@@ -21,7 +21,9 @@ class PencilDiceTray extends StatelessWidget {
   final AppStrings strings;
   final TurnCoachAdvice? coachAdvice;
   final VoidCallback? onApplyOptimalHold;
+  final ValueChanged<List<int>>? onSelectHoldIndices;
   final ValueChanged<YatzyCategory>? onSelectCoachCategory;
+  final VoidCallback? onOpenCoachGuide;
   final YatzyGameRules? rules;
 
   const PencilDiceTray({
@@ -40,7 +42,9 @@ class PencilDiceTray extends StatelessWidget {
     required this.strings,
     this.coachAdvice,
     this.onApplyOptimalHold,
+    this.onSelectHoldIndices,
     this.onSelectCoachCategory,
+    this.onOpenCoachGuide,
     this.rules,
   });
 
@@ -407,6 +411,11 @@ class PencilDiceTray extends StatelessWidget {
         .join(' / ');
 
     final hasMoreRolls = rollsUsed < maxRolls && advice.optimalHold != null;
+    final topHolds = advice.holdAlternatives.take(3).toList();
+    final topCats = advice.categoryRankings.take(3).toList();
+    final bestStratEv = hasMoreRolls
+        ? advice.optimalHold!.expectedStrategicValue
+        : bestNow.strategicNetValue;
 
     return PencilBox(
       borderColor: PencilPalette.greenPencil,
@@ -510,37 +519,254 @@ class PencilDiceTray extends StatelessWidget {
                       ),
                     ),
                   ),
+                if (onOpenCoachGuide != null) ...[
+                  const SizedBox(width: 5),
+                  _buildHowCoachWorksChip(isMobile),
+                ],
               ],
             ),
-            const SizedBox(height: 3),
-          ],
-          GestureDetector(
-            onTap: onSelectCoachCategory != null
-                ? () => onSelectCoachCategory!(bestNow.category)
-                : null,
-            child: MouseRegion(
-              cursor: onSelectCoachCategory != null
-                  ? SystemMouseCursors.click
-                  : SystemMouseCursors.basic,
-              child: Text(
-                strings.coachCategoryRecommendation(
-                  categoryName: bestNowName,
-                  scoreFormatted: bestNowFormatted,
-                  bonusDelta: bestNow.bonusEvDelta,
-                  netStrategicValue: bestNow.strategicNetValue,
-                  isFinalRoll: !hasMoreRolls,
+            if (!advice.isCurrentHoldOptimal &&
+                advice.currentHold != null &&
+                !advice.shouldScoreNow) ...[
+              const SizedBox(height: 2),
+              Text(
+                strings.coachCurrentHoldComparison(
+                  curFaces: advice.currentHold!.heldFaces,
+                  curEvPoints: advice.currentHold!.expectedTurnPoints,
+                  deltaStrategicEv: advice.currentHold!.expectedStrategicValue -
+                      advice.optimalHold!.expectedStrategicValue,
                 ),
                 style: GoogleFonts.patrickHand(
-                  fontSize: isMobile ? 13.0 : 14.5,
-                  fontWeight:
-                      !hasMoreRolls ? FontWeight.bold : FontWeight.w600,
-                  color: PencilPalette.greenPencil,
-                  height: 1.1,
+                  fontSize: isMobile ? 12.0 : 13.0,
+                  fontWeight: FontWeight.w600,
+                  color: PencilPalette.redPencil,
+                  height: 1.05,
                 ),
               ),
+            ],
+            if (topHolds.length > 1) ...[
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 5,
+                runSpacing: 3,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    strings.coachHoldAlternativesLabel,
+                    style: GoogleFonts.patrickHand(
+                      fontSize: isMobile ? 11.5 : 12.5,
+                      fontWeight: FontWeight.bold,
+                      color: PencilPalette.graphiteMedium,
+                    ),
+                  ),
+                  for (int i = 0; i < topHolds.length; i++)
+                    _buildHoldAlternativeChip(
+                      rank: i + 1,
+                      alt: topHolds[i],
+                      deltaEv: topHolds[i].expectedStrategicValue - bestStratEv,
+                      isMobile: isMobile,
+                    ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 4),
+          ],
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: onSelectCoachCategory != null
+                      ? () => onSelectCoachCategory!(bestNow.category)
+                      : null,
+                  child: MouseRegion(
+                    cursor: onSelectCoachCategory != null
+                        ? SystemMouseCursors.click
+                        : SystemMouseCursors.basic,
+                    child: Text(
+                      strings.coachCategoryRecommendation(
+                        categoryName: bestNowName,
+                        scoreFormatted: bestNowFormatted,
+                        bonusDelta: bestNow.bonusEvDelta,
+                        netStrategicValue: bestNow.strategicNetValue,
+                        isFinalRoll: !hasMoreRolls,
+                      ),
+                      style: GoogleFonts.patrickHand(
+                        fontSize: isMobile ? 13.0 : 14.5,
+                        fontWeight:
+                            !hasMoreRolls ? FontWeight.bold : FontWeight.w600,
+                        color: PencilPalette.greenPencil,
+                        height: 1.1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              if (!hasMoreRolls && onOpenCoachGuide != null) ...[
+                const SizedBox(width: 6),
+                _buildHowCoachWorksChip(isMobile),
+              ],
+            ],
+          ),
+          if (topCats.length > 1) ...[
+            const SizedBox(height: 3),
+            Wrap(
+              spacing: 5,
+              runSpacing: 3,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  strings.coachCategoryAlternativesLabel,
+                  style: GoogleFonts.patrickHand(
+                    fontSize: isMobile ? 11.5 : 12.5,
+                    fontWeight: FontWeight.bold,
+                    color: PencilPalette.graphiteMedium,
+                  ),
+                ),
+                for (int i = 0; i < topCats.length; i++)
+                  _buildCategoryAlternativeChip(
+                    rank: i + 1,
+                    eval: topCats[i],
+                    deltaEv:
+                        topCats[i].strategicNetValue - bestNow.strategicNetValue,
+                    isMobile: isMobile,
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHowCoachWorksChip(bool isMobile) {
+    return GestureDetector(
+      key: const Key('open_coach_guide_button'),
+      onTap: onOpenCoachGuide,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8F1FA),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: PencilPalette.bluePencil,
+              width: 1.1,
             ),
           ),
-        ],
+          child: Text(
+            strings.coachHowItWorksButton,
+            style: GoogleFonts.patrickHand(
+              fontSize: isMobile ? 11.5 : 12.5,
+              fontWeight: FontWeight.bold,
+              color: PencilPalette.bluePencil,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHoldAlternativeChip({
+    required int rank,
+    required HoldStrategyEvaluation alt,
+    required double deltaEv,
+    required bool isMobile,
+  }) {
+    final isBest = rank == 1;
+    final deltaStr = isBest
+        ? 'EV ${alt.expectedStrategicValue >= 0 ? "+" : ""}${alt.expectedStrategicValue.toStringAsFixed(1)} ★'
+        : '${deltaEv >= 0 ? "+" : ""}${deltaEv.toStringAsFixed(1)} EV';
+    final holdShort = strings.coachFormatHoldShort(
+      alt.heldFaces,
+      rules?.diceCount ?? dice.length,
+    );
+    final label =
+        '#$rank $holdShort (~${alt.expectedTurnPoints.toStringAsFixed(1)}p · $deltaStr)';
+
+    return GestureDetector(
+      onTap: onSelectHoldIndices != null
+          ? () => onSelectHoldIndices!(alt.holdIndices)
+          : null,
+      child: MouseRegion(
+        cursor: onSelectHoldIndices != null
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.basic,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+          decoration: BoxDecoration(
+            color: isBest ? const Color(0xFFE5F6E8) : Colors.white,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: isBest
+                  ? PencilPalette.greenPencil
+                  : PencilPalette.graphiteFaint,
+              width: isBest ? 1.1 : 0.9,
+            ),
+          ),
+          child: Text(
+            label,
+            style: GoogleFonts.patrickHand(
+              fontSize: isMobile ? 11.5 : 12.5,
+              fontWeight: isBest ? FontWeight.bold : FontWeight.normal,
+              color: isBest
+                  ? PencilPalette.greenPencil
+                  : PencilPalette.graphiteDark,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryAlternativeChip({
+    required int rank,
+    required CategoryStrategyEvaluation eval,
+    required double deltaEv,
+    required bool isMobile,
+  }) {
+    final isBest = rank == 1;
+    final catName = strings.categoryLabel(eval.category, rules: rules);
+    final scoreFormatted = YatzyScorer.formatScore(
+      eval.category,
+      eval.immediateScore,
+    );
+    final evStr = isBest
+        ? 'EV ${eval.strategicNetValue >= 0 ? "+" : ""}${eval.strategicNetValue.toStringAsFixed(1)} ★'
+        : '${deltaEv >= 0 ? "+" : ""}${deltaEv.toStringAsFixed(1)} EV';
+    final label = '#$rank $catName ($scoreFormatted · $evStr)';
+
+    return GestureDetector(
+      onTap: onSelectCoachCategory != null
+          ? () => onSelectCoachCategory!(eval.category)
+          : null,
+      child: MouseRegion(
+        cursor: onSelectCoachCategory != null
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.basic,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+          decoration: BoxDecoration(
+            color: isBest ? const Color(0xFFE5F6E8) : Colors.white,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: isBest
+                  ? PencilPalette.greenPencil
+                  : PencilPalette.graphiteFaint,
+              width: isBest ? 1.1 : 0.9,
+            ),
+          ),
+          child: Text(
+            label,
+            style: GoogleFonts.patrickHand(
+              fontSize: isMobile ? 11.5 : 12.5,
+              fontWeight: isBest ? FontWeight.bold : FontWeight.normal,
+              color: isBest
+                  ? PencilPalette.greenPencil
+                  : PencilPalette.graphiteDark,
+            ),
+          ),
+        ),
       ),
     );
   }

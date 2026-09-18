@@ -67,6 +67,9 @@ class TurnCoachAdvice {
   /// Evaluation of the player's currently selected hold (if `rollsRemaining > 0`).
   final HoldStrategyEvaluation? currentHold;
 
+  /// Ranked list of distinct hold choices (unique held face multisets) from best to worst EV.
+  final List<HoldStrategyEvaluation> holdAlternatives;
+
   /// True if the player's currently held dice multiset matches the optimal hold multiset.
   final bool isCurrentHoldOptimal;
 
@@ -83,11 +86,40 @@ class TurnCoachAdvice {
     required this.categoryRankings,
     required this.optimalHold,
     required this.currentHold,
+    this.holdAlternatives = const [],
     required this.isCurrentHoldOptimal,
     required this.shouldScoreNow,
     required this.targetCategories,
     required this.currentBonusProbability,
   });
+
+  /// Returns the strategic evaluation for [category] if it is currently open.
+  CategoryStrategyEvaluation? evaluationFor(YatzyCategory category) {
+    for (int i = 0; i < categoryRankings.length; i++) {
+      if (categoryRankings[i].category == category) {
+        return categoryRankings[i];
+      }
+    }
+    return null;
+  }
+
+  /// Returns the 1-based rank (1 = best) of [category] among open categories, or null if filled.
+  int? rankOf(YatzyCategory category) {
+    for (int i = 0; i < categoryRankings.length; i++) {
+      if (categoryRankings[i].category == category) {
+        return i + 1;
+      }
+    }
+    return null;
+  }
+
+  /// Returns the strategic EV difference (`<= 0.0`) of [category] compared to [bestCategoryNow].
+  double deltaVsBestCategory(YatzyCategory category) {
+    if (categoryRankings.isEmpty) return 0.0;
+    final eval = evaluationFor(category);
+    if (eval == null) return 0.0;
+    return eval.strategicNetValue - bestCategoryNow.strategicNetValue;
+  }
 }
 
 /// Cached multiset transition graph for exact Within-Turn Backward Induction.
@@ -175,6 +207,7 @@ class YatzyStrategySolver {
         categoryRankings: rankings,
         optimalHold: null,
         currentHold: null,
+        holdAlternatives: const [],
         isCurrentHoldOptimal: true,
         shouldScoreNow: true,
         targetCategories: rankings.take(2).map((e) => e.category).toList(),
@@ -195,6 +228,7 @@ class YatzyStrategySolver {
 
     final optimalHold = holdResult.optimalHold;
     final currentHold = holdResult.currentHold;
+    final holdAlternatives = holdResult.holdAlternatives;
 
     final sortedOptFaces = List<int>.from(optimalHold.heldFaces)..sort();
     final sortedCurFaces = List<int>.from(currentHold.heldFaces)..sort();
@@ -225,6 +259,7 @@ class YatzyStrategySolver {
       categoryRankings: rankings,
       optimalHold: optimalHold,
       currentHold: currentHold,
+      holdAlternatives: holdAlternatives,
       isCurrentHoldOptimal: sameHold,
       shouldScoreNow: shouldScoreNow,
       targetCategories: targets,
@@ -430,6 +465,7 @@ class YatzyStrategySolver {
   static ({
     HoldStrategyEvaluation optimalHold,
     HoldStrategyEvaluation currentHold,
+    List<HoldStrategyEvaluation> holdAlternatives,
   }) _solveOptimalHold({
     required List<DieState> dice,
     required int rollsRemaining,
@@ -590,6 +626,7 @@ class YatzyStrategySolver {
   static ({
     HoldStrategyEvaluation optimalHold,
     HoldStrategyEvaluation currentHold,
+    List<HoldStrategyEvaluation> holdAlternatives,
   }) _evaluateActualDiceSubsets({
     required List<DieState> dice,
     required ({double strategic, double rawPoints}) Function(
@@ -601,6 +638,7 @@ class YatzyStrategySolver {
 
     HoldStrategyEvaluation? bestHold;
     HoldStrategyEvaluation? currentHold;
+    final uniqueByMultiset = <int, HoldStrategyEvaluation>{};
 
     int currentMask = 0;
     for (int i = 0; i < n; i++) {
@@ -632,6 +670,13 @@ class YatzyStrategySolver {
         currentHold = evaluation;
       }
 
+      final multisetKey =
+          _MultisetTransitionTable.encodeSortedMultiset(sortedFaces);
+      // Prefer the evaluation that matches currentMask if equivalent multiset, else keep first
+      if (!uniqueByMultiset.containsKey(multisetKey) || mask == currentMask) {
+        uniqueByMultiset[multisetKey] = evaluation;
+      }
+
       if (bestHold == null ||
           evaluation.expectedStrategicValue >
               bestHold.expectedStrategicValue + 1e-6 ||
@@ -644,9 +689,18 @@ class YatzyStrategySolver {
       }
     }
 
+    final alternatives = uniqueByMultiset.values.toList()
+      ..sort((a, b) {
+        final cmp =
+            b.expectedStrategicValue.compareTo(a.expectedStrategicValue);
+        if (cmp != 0) return cmp;
+        return b.heldFaces.length.compareTo(a.heldFaces.length);
+      });
+
     return (
       optimalHold: bestHold!,
       currentHold: currentHold!,
+      holdAlternatives: alternatives,
     );
   }
 

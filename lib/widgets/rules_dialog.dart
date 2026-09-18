@@ -5,10 +5,12 @@ import 'pencil_painters.dart';
 
 class RulesDialog extends StatelessWidget {
   final AppStrings strings;
+  final VoidCallback? onOpenCoachGuide;
 
   const RulesDialog({
     super.key,
     required this.strings,
+    this.onOpenCoachGuide,
   });
 
   @override
@@ -56,6 +58,41 @@ class RulesDialog extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (onOpenCoachGuide != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          onOpenCoachGuide!();
+                        },
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEAF6EC),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: PencilPalette.greenPencil,
+                                width: 1.2,
+                              ),
+                            ),
+                            child: Text(
+                              strings.coachHowItWorksButton,
+                              style: GoogleFonts.patrickHand(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.bold,
+                                color: PencilPalette.greenPencil,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   IconButton(
                     icon: const Icon(
                       Icons.close,
