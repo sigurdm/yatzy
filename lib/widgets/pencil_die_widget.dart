@@ -793,86 +793,159 @@ class _PencilDiePainter extends CustomPainter {
 
   void _paintD8Octahedron(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    final cut = size.width * 0.22;
-    final inset = 2.0;
+    final w = size.width;
+    final h = size.height;
 
-    // 8 vertices of a beveled octagonal crystal d8
-    final pts = <Offset>[
-      Offset(cut, inset),
-      Offset(size.width - cut, inset),
-      Offset(size.width - inset, cut),
-      Offset(size.width - inset, size.height - cut),
-      Offset(size.width - cut, size.height - inset),
-      Offset(cut, size.height - inset),
-      Offset(inset, size.height - cut),
-      Offset(inset, cut),
+    // 3D Octahedron (double square pyramid) projection:
+    // Top apex, bottom apex, two front equatorial vertices (forming the upward
+    // central triangle face where the rolled numeral sits), and two back/side
+    // equatorial vertices (forming the side diamond wings).
+    final top = Offset(w * 0.50, h * 0.04);
+    final upperRight = Offset(w * 0.91, h * 0.35);
+    final frontRight = Offset(w * 0.85, h * 0.65);
+    final bottom = Offset(w * 0.50, h * 0.96);
+    final frontLeft = Offset(w * 0.15, h * 0.65);
+    final upperLeft = Offset(w * 0.09, h * 0.35);
+
+    // Outer 6-vertex diamond crystal silhouette
+    final outerPts = <Offset>[
+      top,
+      upperRight,
+      frontRight,
+      bottom,
+      frontLeft,
+      upperLeft,
     ];
+    final outerPath = Path()..addPolygon(outerPts, true);
 
-    final polyPath = Path()..addPolygon(pts, true);
-
-    // 1. Tinted paper fill for d8 crystal
+    // 1. Base paper fill for the octahedron
     final bgPaint = Paint()
-      ..color = isHeld ? const Color(0xFFFFF9F2) : const Color(0xFFF3F7FA)
+      ..color = isHeld ? const Color(0xFFFFF9F2) : const Color(0xFFEEF5FA)
       ..style = PaintingStyle.fill;
-    canvas.drawPath(polyPath, bgPaint);
+    canvas.drawPath(outerPath, bgPaint);
 
-    // 2. Facet shading on bottom-right half
+    // Brighter highlight fill on the main front-facing equilateral triangle (top -> frontRight -> frontLeft)
+    final mainFacePath = Path()
+      ..moveTo(top.dx, top.dy)
+      ..lineTo(frontRight.dx, frontRight.dy)
+      ..lineTo(frontLeft.dx, frontLeft.dy)
+      ..close();
+    final mainFacePaint = Paint()
+      ..color = isHeld ? const Color(0xFFFFFCF7) : const Color(0xFFF7FBFE)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(mainFacePath, mainFacePaint);
+
+    // 2. 3D Facet pencil shading:
+    // Left side facets (top -> frontLeft -> upperLeft and upperLeft -> frontLeft -> bottom)
+    final leftFlankPath = Path()
+      ..moveTo(top.dx, top.dy)
+      ..lineTo(frontLeft.dx, frontLeft.dy)
+      ..lineTo(bottom.dx, bottom.dy)
+      ..lineTo(upperLeft.dx, upperLeft.dy)
+      ..close();
     canvas.save();
-    canvas.clipPath(polyPath);
+    canvas.clipPath(leftFlankPath);
     PencilDrawingUtils.drawPencilShading(
       canvas,
       rect,
       color: PencilPalette.bluePencil,
-      spacing: 4.5,
-      opacity: 0.14,
-      seed: seed,
+      spacing: 4.8,
+      opacity: 0.12,
+      seed: seed + 1,
     );
     canvas.restore();
 
-    // 3. Hand-drawn double-stroke octagonal outline
+    // Right side facets (top -> upperRight -> frontRight and frontRight -> upperRight -> bottom)
+    final rightFlankPath = Path()
+      ..moveTo(top.dx, top.dy)
+      ..lineTo(upperRight.dx, upperRight.dy)
+      ..lineTo(bottom.dx, bottom.dy)
+      ..lineTo(frontRight.dx, frontRight.dy)
+      ..close();
+    canvas.save();
+    canvas.clipPath(rightFlankPath);
+    PencilDrawingUtils.drawPencilShading(
+      canvas,
+      rect,
+      color: PencilPalette.bluePencil,
+      spacing: 4.2,
+      opacity: 0.19,
+      seed: seed + 2,
+    );
+    canvas.restore();
+
+    // Bottom pyramid front facet (frontLeft -> frontRight -> bottom) - deeper shadow underneath equator
+    final bottomFacetPath = Path()
+      ..moveTo(frontLeft.dx, frontLeft.dy)
+      ..lineTo(frontRight.dx, frontRight.dy)
+      ..lineTo(bottom.dx, bottom.dy)
+      ..close();
+    canvas.save();
+    canvas.clipPath(bottomFacetPath);
+    PencilDrawingUtils.drawPencilShading(
+      canvas,
+      rect,
+      color: PencilPalette.bluePencil,
+      spacing: 3.6,
+      opacity: 0.25,
+      seed: seed + 3,
+    );
+    canvas.restore();
+
+    // 3. Hand-drawn outer octahedral silhouette edges
     final strokeColor =
         isHeld ? PencilPalette.redPencil : PencilPalette.bluePencil;
-    for (int i = 0; i < pts.length; i++) {
-      final p1 = pts[i];
-      final p2 = pts[(i + 1) % pts.length];
+    for (int i = 0; i < outerPts.length; i++) {
       PencilDrawingUtils.drawPencilLine(
         canvas,
-        p1,
-        p2,
+        outerPts[i],
+        outerPts[(i + 1) % outerPts.length],
         color: strokeColor,
-        strokeWidth: 1.6,
+        strokeWidth: 1.65,
         overshoot: 1.4,
         seed: seed + i + 10,
       );
     }
 
-    // 4. Draw pips (1..8)
-    final pipOffsets = _getPipOffsets(faceValue, size);
-    final scale = (size.width / 64.0) * 0.92;
-    for (int i = 0; i < pipOffsets.length; i++) {
-      _drawPencilPip(
-        canvas,
-        pipOffsets[i],
-        scale,
-        color: PencilPalette.graphiteDark,
-      );
-    }
-
-    // 5. Draw small corner badge with numeral (e.g. '7' or '8') for immediate clarity
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: '$faceValue',
-        style: GoogleFonts.patrickHand(
-          fontSize: (size.width * 0.24).clamp(10.0, 15.0),
-          fontWeight: FontWeight.bold,
-          color: strokeColor,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    textPainter.paint(
+    // 4. Inner 3D octahedral ridge lines framing the central equilateral triangle face
+    // Left ridge (top -> frontLeft)
+    PencilDrawingUtils.drawPencilLine(
       canvas,
-      Offset(size.width * 0.5 - textPainter.width / 2, size.height * 0.04),
+      top,
+      frontLeft,
+      color: strokeColor.withValues(alpha: 0.82),
+      strokeWidth: 1.35,
+      overshoot: 1.0,
+      seed: seed + 16,
+    );
+    // Right ridge (top -> frontRight)
+    PencilDrawingUtils.drawPencilLine(
+      canvas,
+      top,
+      frontRight,
+      color: strokeColor.withValues(alpha: 0.82),
+      strokeWidth: 1.35,
+      overshoot: 1.0,
+      seed: seed + 17,
+    );
+    // Horizontal equatorial ridge (frontLeft -> frontRight)
+    PencilDrawingUtils.drawPencilLine(
+      canvas,
+      frontLeft,
+      frontRight,
+      color: strokeColor.withValues(alpha: 0.88),
+      strokeWidth: 1.45,
+      overshoot: 1.0,
+      seed: seed + 18,
+    );
+
+    // 5. Draw bold RPG numeral (1..8) centered inside the front equilateral triangle face
+    _drawCenteredDieNumeral(
+      canvas,
+      size,
+      strokeColor,
+      fontSizeFactor: 0.42,
+      yOffsetFactor: -0.06,
     );
   }
 
