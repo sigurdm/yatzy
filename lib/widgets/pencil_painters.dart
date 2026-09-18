@@ -395,14 +395,21 @@ class PencilCirclePainter extends CustomPainter {
   final double strokeWidth;
   final int seed;
 
+  /// Drawing progress from 0.0 (not started) to 1.0 (complete 1.15-turn loop).
+  final double progress;
+
   const PencilCirclePainter({
     this.color = PencilPalette.redPencil,
     this.strokeWidth = 2.2,
     this.seed = 99,
+    this.progress = 1.0,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    final clampedProgress = progress.clamp(0.0, 1.0);
+    if (clampedProgress <= 0.001) return;
+
     final cx = size.width / 2;
     final cy = size.height / 2;
     final rx = size.width / 2 - 2;
@@ -416,21 +423,31 @@ class PencilCirclePainter extends CustomPainter {
 
     final path = Path();
     // Draw a 1.15-turn spiral loop so the ends overlap like a hand-drawn circle
-    const steps = 40;
+    const steps = 48;
     const totalAngle = pi * 2.25;
     final startAngle = -pi * 0.6 + (seed % 5) * 0.1;
+    final maxStepFloat = clampedProgress * steps;
+    final maxFullStep = maxStepFloat.floor();
 
-    for (int i = 0; i <= steps; i++) {
-      final t = i / steps;
+    Offset pointAt(double t) {
       final angle = startAngle + t * totalAngle;
       final wobbleR = sin(t * pi * 5 + seed) * 1.6 + (t * 1.8);
       final x = cx + (rx + wobbleR) * cos(angle);
       final y = cy + (ry + wobbleR * 0.8) * sin(angle);
+      return Offset(x, y);
+    }
+
+    for (int i = 0; i <= maxFullStep; i++) {
+      final pt = pointAt(i / steps);
       if (i == 0) {
-        path.moveTo(x, y);
+        path.moveTo(pt.dx, pt.dy);
       } else {
-        path.lineTo(x, y);
+        path.lineTo(pt.dx, pt.dy);
       }
+    }
+    if (maxStepFloat > maxFullStep) {
+      final tipPt = pointAt(clampedProgress);
+      path.lineTo(tipPt.dx, tipPt.dy);
     }
     canvas.drawPath(path, paint);
   }
@@ -439,5 +456,6 @@ class PencilCirclePainter extends CustomPainter {
   bool shouldRepaint(covariant PencilCirclePainter oldDelegate) =>
       oldDelegate.color != color ||
       oldDelegate.strokeWidth != strokeWidth ||
-      oldDelegate.seed != seed;
+      oldDelegate.seed != seed ||
+      oldDelegate.progress != progress;
 }

@@ -4,6 +4,7 @@ import 'package:yatzee/l10n/app_strings.dart';
 import 'package:yatzee/main.dart';
 import 'package:yatzee/models/yatzy_models.dart';
 import 'package:yatzee/models/yatzy_strategy_solver.dart';
+import 'package:yatzee/widgets/score_celebration_overlay.dart';
 
 void main() {
   group('5-Dice, 6-Dice, 7-Dice & d8 Yatzy Scoring Rules', () {
@@ -263,6 +264,71 @@ void main() {
       expect(
         advice3.deltaVsBestCategory(YatzyCategory.fourOfAKind),
         lessThan(0.0),
+      );
+    });
+
+    test('ScoreCelebrationEvent assigns appropriate celebration tiers (scratch, standard, great, jackpot)', () {
+      const rules = YatzyGameRules();
+
+      // Scratch tier (negative upper score or zero lower score)
+      final scratchUpper = ScoreCelebrationEvent.fromScore(
+        eventId: 1,
+        playerIdx: 0,
+        category: YatzyCategory.ones,
+        displayScore: -2,
+        rules: rules,
+        justEarnedBonus: false,
+      );
+      expect(scratchUpper.tier, equals(ScoreCelebrationTier.scratch));
+
+      // Standard tier (Par 0 upper score or modest lower score)
+      final standardPar = ScoreCelebrationEvent.fromScore(
+        eventId: 2,
+        playerIdx: 0,
+        category: YatzyCategory.fours,
+        displayScore: 0,
+        rules: rules,
+        justEarnedBonus: false,
+      );
+      expect(standardPar.tier, equals(ScoreCelebrationTier.standard));
+      expect(standardPar.rawPointsAdded, equals(12));
+
+      // Great tier (above-par upper score or Full House / Straight)
+      final greatCombo = ScoreCelebrationEvent.fromScore(
+        eventId: 3,
+        playerIdx: 0,
+        category: YatzyCategory.fullHouse,
+        displayScore: 24,
+        rules: rules,
+        justEarnedBonus: false,
+      );
+      expect(greatCombo.tier, equals(ScoreCelebrationTier.great));
+      expect(greatCombo.floatingBadgeText, equals('+24p ★'));
+
+      // Jackpot tier (Yatzy or clinching Upper Bonus)
+      final jackpotYatzy = ScoreCelebrationEvent.fromScore(
+        eventId: 4,
+        playerIdx: 0,
+        category: YatzyCategory.yatzy,
+        displayScore: 50,
+        rules: rules,
+        justEarnedBonus: false,
+      );
+      expect(jackpotYatzy.tier, equals(ScoreCelebrationTier.jackpot));
+      expect(jackpotYatzy.floatingBadgeText, equals('★ YATZY! +50p ★'));
+
+      final jackpotBonus = ScoreCelebrationEvent.fromScore(
+        eventId: 5,
+        playerIdx: 0,
+        category: YatzyCategory.sixes,
+        displayScore: 6,
+        rules: rules,
+        justEarnedBonus: true,
+      );
+      expect(jackpotBonus.tier, equals(ScoreCelebrationTier.jackpot));
+      expect(
+        jackpotBonus.floatingBadgeText,
+        equals('★ +6 (BONUS +50p!) ★'),
       );
     });
   });

@@ -14,6 +14,7 @@ import 'widgets/pencil_die_widget.dart';
 import 'widgets/pencil_painters.dart';
 import 'widgets/player_setup_dialog.dart';
 import 'widgets/rules_dialog.dart';
+import 'widgets/score_celebration_overlay.dart';
 import 'widgets/scorecard_widget.dart';
 
 void main() {
@@ -56,17 +57,26 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
   AppLocale _locale = AppLocale.da;
   AppStrings get _strings => AppStrings(_locale);
 
-  YatzyGameRules _rules = const YatzyGameRules();
-  late List<PlayerScorecard> _players;
+  YatzyGameRules _rules = const YatzyGameRules(
+    variant: YatzyGameVariant.classic5Dice,
+    diceCount: 5,
+    dieSides: 6,
+    maxRolls: 3,
+    upperParCount: 3,
+  );
+
+  List<PlayerScorecard> _players = [];
   int _activePlayerIndex = 0;
 
-  late List<DieState> _dice;
-  int _rollsUsed = 1;
+  List<DieState> _dice = [];
+  int _rollsUsed = 0;
   bool _isRolling = false;
   bool _coachModeEnabled = false;
 
   int? _lastScoredPlayerIndex;
   YatzyCategory? _lastScoredCategory;
+  ScoreCelebrationEvent? _lastScoreCelebration;
+  int _celebrationEventCounter = 0;
 
   final List<TurnUndoSnapshot> _undoStack = [];
 
@@ -129,6 +139,7 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
       _activePlayerIndex = 0;
       _lastScoredPlayerIndex = null;
       _lastScoredCategory = null;
+      _lastScoreCelebration = null;
       _undoStack.clear();
       _startTurnWithAutoRoll(animate: false);
     });
@@ -191,6 +202,7 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
       // Clear the previous turn's highlighted score once the new dice roll begins!
       _lastScoredPlayerIndex = null;
       _lastScoredCategory = null;
+      _lastScoreCelebration = null;
     });
 
     Timer(const Duration(milliseconds: 360), () {
@@ -265,6 +277,7 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
     );
 
     final scoredPlayerIdx = _activePlayerIndex;
+    final hadBonusBefore = currentPlayer.hasEarnedBonus;
 
     _undoStack.add(
       TurnUndoSnapshot(
@@ -278,8 +291,18 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
 
     setState(() {
       currentPlayer.scores[category] = score;
+      final justEarnedBonus = !hadBonusBefore && currentPlayer.hasEarnedBonus;
+      _celebrationEventCounter++;
       _lastScoredPlayerIndex = scoredPlayerIdx;
       _lastScoredCategory = category;
+      _lastScoreCelebration = ScoreCelebrationEvent.fromScore(
+        eventId: _celebrationEventCounter,
+        playerIdx: scoredPlayerIdx,
+        category: category,
+        displayScore: score,
+        rules: _rules,
+        justEarnedBonus: justEarnedBonus,
+      );
     });
 
     final allComplete = _players.every((p) => p.isComplete);
@@ -325,6 +348,7 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
       _players[_activePlayerIndex].scores.remove(snapshot.assignedCategory);
       _dice = List<DieState>.from(snapshot.diceBeforeAssignment);
       _rollsUsed = snapshot.rollsUsedBeforeAssignment;
+      _lastScoreCelebration = null;
       if (_undoStack.isNotEmpty) {
         _lastScoredPlayerIndex = _undoStack.last.playerIndex;
         _lastScoredCategory = _undoStack.last.assignedCategory;
@@ -529,6 +553,7 @@ class _YatzyGameScreenState extends State<YatzyGameScreen> {
                         activePlayerIndex: _activePlayerIndex,
                         lastScoredPlayerIndex: _lastScoredPlayerIndex,
                         lastScoredCategory: _lastScoredCategory,
+                        lastScoreCelebration: _lastScoreCelebration,
                         currentDiceValues: currentDiceValues,
                         canAssignScore:
                             _rollsUsed > 0 && !isGameComplete && !_isRolling,

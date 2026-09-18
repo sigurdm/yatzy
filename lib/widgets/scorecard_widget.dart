@@ -4,12 +4,14 @@ import '../l10n/app_strings.dart';
 import '../models/yatzy_models.dart';
 import '../models/yatzy_strategy_solver.dart';
 import 'pencil_painters.dart';
+import 'score_celebration_overlay.dart';
 
 class PencilScorecardWidget extends StatefulWidget {
   final List<PlayerScorecard> players;
   final int activePlayerIndex;
   final int? lastScoredPlayerIndex;
   final YatzyCategory? lastScoredCategory;
+  final ScoreCelebrationEvent? lastScoreCelebration;
   final List<int> currentDiceValues;
   final bool canAssignScore;
   final void Function(YatzyCategory category) onSelectCategory;
@@ -23,6 +25,7 @@ class PencilScorecardWidget extends StatefulWidget {
     required this.activePlayerIndex,
     this.lastScoredPlayerIndex,
     this.lastScoredCategory,
+    this.lastScoreCelebration,
     required this.currentDiceValues,
     required this.canAssignScore,
     required this.onSelectCategory,
@@ -691,7 +694,10 @@ class _PencilScorecardWidgetState extends State<PencilScorecardWidget> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isLastScored
-              ? const Color(0xFFDDF5E3)
+              ? (widget.lastScoreCelebration?.tier ==
+                      ScoreCelebrationTier.jackpot
+                  ? const Color(0xFFFFF4C2)
+                  : const Color(0xFFDDF5E3))
               : (isActivePlayer
                   ? PencilPalette.yellowHighlighter.withValues(alpha: 0.12)
                   : Colors.transparent),
@@ -702,50 +708,28 @@ class _PencilScorecardWidgetState extends State<PencilScorecardWidget> {
             ),
           ),
         ),
-        child: Stack(
-          alignment: Alignment.center,
-          clipBehavior: Clip.none,
-          children: [
-            if (isLastScored)
-              Positioned(
-                left: 6,
-                right: 6,
-                top: 3,
-                bottom: 3,
-                child: CustomPaint(
-                  painter: PencilCirclePainter(
-                    color: PencilPalette.greenPencil,
-                    strokeWidth: 2.2,
-                    seed: category.index * 17 + playerIdx * 5,
-                  ),
+        child: isLastScored
+            ? ScoredCellCelebrationWidget(
+                celebration: widget.lastScoreCelebration,
+                formattedScore: formatted,
+                scoreTextStyle: GoogleFonts.patrickHand(
+                  fontSize: isMobile ? 19.5 : 22,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+                circleSeed: category.index * 17 + playerIdx * 5,
+                circleColor: textColor == PencilPalette.redPencil
+                    ? PencilPalette.redPencil
+                    : PencilPalette.greenPencil,
+              )
+            : Text(
+                formatted,
+                style: GoogleFonts.patrickHand(
+                  fontSize: isMobile ? 18 : 20,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
                 ),
               ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  formatted,
-                  style: GoogleFonts.patrickHand(
-                    fontSize: isLastScored
-                        ? (isMobile ? 19.5 : 22)
-                        : (isMobile ? 18 : 20),
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
-                ),
-                if (isLastScored) ...[
-                  const SizedBox(width: 2),
-                  const Icon(
-                    Icons.check_circle_rounded,
-                    size: 13,
-                    color: PencilPalette.greenPencil,
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
       );
     }
 
@@ -885,14 +869,21 @@ class _PencilScorecardWidgetState extends State<PencilScorecardWidget> {
       textColor = PencilPalette.graphiteMedium;
     }
 
+    final shouldPulseBonus = widget.lastScoreCelebration != null &&
+        widget.lastScoreCelebration!.justEarnedBonus &&
+        widget.lastScoredPlayerIndex != null &&
+        widget.players[widget.lastScoredPlayerIndex!].id == player.id;
+
     return Container(
       width: width,
       height: height,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: isActive
-            ? PencilPalette.yellowHighlighter.withValues(alpha: 0.18)
-            : Colors.transparent,
+        color: shouldPulseBonus
+            ? const Color(0xFFFFF4C2)
+            : (isActive
+                ? PencilPalette.yellowHighlighter.withValues(alpha: 0.18)
+                : Colors.transparent),
         border: Border(
           left: BorderSide(
             color: PencilPalette.graphiteFaint.withValues(alpha: 0.6),
@@ -900,12 +891,16 @@ class _PencilScorecardWidgetState extends State<PencilScorecardWidget> {
           ),
         ),
       ),
-      child: Text(
-        text,
-        style: GoogleFonts.patrickHand(
-          fontSize: earned ? 18 : 13,
-          fontWeight: earned ? FontWeight.bold : FontWeight.w600,
-          color: textColor,
+      child: ScoreSummaryPulseWrapper(
+        triggerEventId: widget.lastScoreCelebration?.eventId,
+        shouldPulse: shouldPulseBonus,
+        child: Text(
+          text,
+          style: GoogleFonts.patrickHand(
+            fontSize: earned ? 18 : 13,
+            fontWeight: earned ? FontWeight.bold : FontWeight.w600,
+            color: textColor,
+          ),
         ),
       ),
     );
@@ -931,6 +926,10 @@ class _PencilScorecardWidgetState extends State<PencilScorecardWidget> {
       grandTotal: player.grandTotal,
     );
 
+    final shouldPulseGrandTotal = widget.lastScoreCelebration != null &&
+        widget.lastScoredPlayerIndex != null &&
+        widget.players[widget.lastScoredPlayerIndex!].id == player.id;
+
     return Tooltip(
       message: tooltipText,
       child: Container(
@@ -938,9 +937,11 @@ class _PencilScorecardWidgetState extends State<PencilScorecardWidget> {
         height: height,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isActive
-              ? PencilPalette.yellowHighlighter.withValues(alpha: 0.35)
-              : Colors.transparent,
+          color: shouldPulseGrandTotal
+              ? const Color(0xFFFFF4C2)
+              : (isActive
+                  ? PencilPalette.yellowHighlighter.withValues(alpha: 0.35)
+                  : Colors.transparent),
           border: Border(
             left: BorderSide(
               color: PencilPalette.graphiteFaint.withValues(alpha: 0.6),
@@ -948,28 +949,32 @@ class _PencilScorecardWidgetState extends State<PencilScorecardWidget> {
             ),
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '${player.grandTotal}',
-              style: GoogleFonts.patrickHand(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: PencilPalette.bluePencil,
-                height: 1.0,
-              ),
-            ),
-            if (player.filledUpperCount < 6 && player.scores.isNotEmpty)
+        child: ScoreSummaryPulseWrapper(
+          triggerEventId: widget.lastScoreCelebration?.eventId,
+          shouldPulse: shouldPulseGrandTotal,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               Text(
-                'par ${widget.rules.upperParTotal}: ${player.formulaGrandTotal}',
+                '${player.grandTotal}',
                 style: GoogleFonts.patrickHand(
-                  fontSize: 10.5,
-                  color: PencilPalette.graphiteMedium,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: PencilPalette.bluePencil,
                   height: 1.0,
                 ),
               ),
-          ],
+              if (player.filledUpperCount < 6 && player.scores.isNotEmpty)
+                Text(
+                  'par ${widget.rules.upperParTotal}: ${player.formulaGrandTotal}',
+                  style: GoogleFonts.patrickHand(
+                    fontSize: 10.5,
+                    color: PencilPalette.graphiteMedium,
+                    height: 1.0,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
