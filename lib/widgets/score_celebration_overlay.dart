@@ -6,22 +6,29 @@ import 'pencil_painters.dart';
 
 /// Intensity tier for the sketchbook celebration when a score is written.
 enum ScoreCelebrationTier {
-  /// Zero lower score or negative upper-section score: playful eraser crumbs & graphite puff.
+  /// Zero lower score or negative upper-section score:
+  /// The wooden pencil flips 180° to its pink rubber eraser and scrubs across the cell,
+  /// kicking up pink eraser crumbs and sketching a grumpy `( ×_× )` storm-cloud doodle!
   scratch,
 
-  /// Par (0) upper score or modest lower score: comic starburst rays + central burst + aerial pop.
+  /// Par (0) upper score or modest lower score:
+  /// A 3D wooden pencil swoops in, traces the circle around the number, then sketches
+  /// a double-underline, swooshing checkmark (`✓`), and hand-drawn 5-stroke notebook stars (`☆`).
   standard,
 
   /// Above-par upper score (+1..+12) or major lower combo (Full House, Straight, 4-of-a-Kind, etc.):
-  /// central fountain + 2 ascending firework rockets exploding into colored-pencil stars & ribbons.
+  /// A chisel-tip fluorescent Highlighter sweeps across the cell while colored pencils live-sketch
+  /// a 3D Ribbon Banner, a Crown doodle, loop-de-loop spirals, pentagram stars, and cedar pencil shavings!
   great,
 
   /// Yatzy, Super Yatzy, or clinching the Upper Section Bonus:
-  /// massive central supernova + 4 staggered aerial firework rockets across the notebook + stamp banner.
+  /// Full Notebook Margin Takeover! Highlighter sweep + dual Gold/Red pencils live-sketching a giant Crown,
+  /// a hand-drawn Paper Airplane flying a loop-de-loop across the page with a dashed pencil trail,
+  /// cedar wood sharpener curls, and a slammed Red-Ink Grade Stamp (`★ YATZY! +50p ★`).
   jackpot,
 }
 
-/// Snapshot of the latest scored turn used to trigger cell-anchored fireworks & pulses.
+/// Snapshot of the latest scored turn used to trigger cell-anchored pencil & notebook animations.
 class ScoreCelebrationEvent {
   final int eventId;
   final int playerIdx;
@@ -104,7 +111,7 @@ class ScoreCelebrationEvent {
     );
   }
 
-  /// Floating hand-lettered badge label shown drifting up from the scored cell.
+  /// Hand-lettered notebook stamp/ribbon label shown above the scored cell.
   String get floatingBadgeText {
     if (category == YatzyCategory.yatzy && displayScore > 0) {
       return '★ YATZY! +${displayScore}p ★';
@@ -134,82 +141,62 @@ class ScoreCelebrationEvent {
   }
 }
 
-enum _ParticleShape {
-  fivePointStar,
-  fourPointSparkle,
-  pencilShavingCurl,
-  streamerRibbon,
-  diamondConfetti,
-  eraserCrumb,
-}
-
-class _AerialRocket {
-  final Offset targetOffset;
-  final double launchTime;
-  final double detonateTime;
+/// A self-drawing continuous pencil doodle path on the notebook paper.
+/// Drawn progressively using `PathMetric.extractPath(0, len * progress)` with a physical
+/// wooden pencil tip following the active stroke!
+class _ProgressiveDoodleStroke {
+  final Path path;
   final Color color;
+  final double strokeWidth;
+  final double startTime;
+  final double endTime;
+  final bool showPencilActor;
+  final Color? fillAfterComplete;
 
-  const _AerialRocket({
-    required this.targetOffset,
-    required this.launchTime,
-    required this.detonateTime,
+  const _ProgressiveDoodleStroke({
+    required this.path,
     required this.color,
+    this.strokeWidth = 2.1,
+    required this.startTime,
+    required this.endTime,
+    this.showPencilActor = false,
+    this.fillAfterComplete,
   });
 }
 
-class _SketchParticle {
-  final Offset originOffset;
+/// Physical paper debris (pink eraser crumbs or scalloped cedar-wood pencil sharpener shavings).
+class _NotebookDebris {
+  final Offset origin;
   final double vx;
   final double vy;
   final double gravity;
-  final double drag;
-  final double flutterAmp;
-  final double flutterFreq;
-  final double flutterPhase;
   final double size;
   final double initialRotation;
-  final double angularVelocity;
+  final double spin;
   final double startTime;
-  final double lifeSpan;
-  final Color color;
-  final _ParticleShape shape;
+  final Color primaryColor;
+  final bool isWoodShavingFan;
 
-  const _SketchParticle({
-    required this.originOffset,
+  const _NotebookDebris({
+    required this.origin,
     required this.vx,
     required this.vy,
     required this.gravity,
-    required this.drag,
-    required this.flutterAmp,
-    required this.flutterFreq,
-    required this.flutterPhase,
     required this.size,
     required this.initialRotation,
-    required this.angularVelocity,
+    required this.spin,
     required this.startTime,
-    required this.lifeSpan,
-    required this.color,
-    required this.shape,
+    required this.primaryColor,
+    required this.isWoodShavingFan,
   });
-
-  Offset positionAt(double localT) {
-    // Non-linear air-drag trajectory so particles shoot out fast and then float & flutter!
-    final effectiveT = (1.0 - exp(-drag * localT * 2.2)) / drag;
-    final gravityDrop = 0.5 * gravity * localT * localT;
-    final flutterX =
-        sin(localT * flutterFreq + flutterPhase) * flutterAmp * localT;
-    return Offset(
-      originOffset.dx + vx * effectiveT + flutterX,
-      originOffset.dy + vy * effectiveT + gravityDrop,
-    );
-  }
 }
 
 /// Wraps a newly-scored cell on the scorecard, providing:
-/// 1. Live self-drawing green colored-pencil loop (`PencilCirclePainter` progress 0 -> 1).
+/// 1. Live self-drawing colored-pencil circle (`PencilCirclePainter` progress 0 -> 1).
 /// 2. Elastic spring number pop (`scale 0.42 -> 1.44 -> 0.92 -> 1.0`).
-/// 3. Root `OverlayEntry` fireworks (`CompositedTransformFollower`) so rockets, stars,
-///    and floating banners burst high above the entire scorecard without any clipping or occlusion!
+/// 3. Root `OverlayEntry` (`CompositedTransformFollower`) featuring a **Living 3D Wooden Pencil**,
+///    **Chisel-Tip Yellow Highlighter**, **Pink Rubber Eraser Scrub**, **Self-Drawing Margin Doodles**,
+///    and a **Paper Airplane Loop-de-Loop** on Jackpots!
 class ScoredCellCelebrationWidget extends StatefulWidget {
   final ScoreCelebrationEvent? celebration;
   final String formattedScore;
@@ -238,13 +225,14 @@ class _ScoredCellCelebrationWidgetState
   OverlayEntry? _overlayEntry;
 
   late AnimationController _controller;
-  late List<_AerialRocket> _rockets;
-  late List<_SketchParticle> _particles;
+  late List<_ProgressiveDoodleStroke> _doodleStrokes;
+  late List<_NotebookDebris> _debris;
+  Path? _airplaneFlightPath;
 
   @override
   void initState() {
     super.initState();
-    _buildChoreography(widget.celebration);
+    _buildNotebookScene(widget.celebration);
     _controller = AnimationController(
       vsync: this,
       duration: _durationFor(widget.celebration?.tier),
@@ -272,7 +260,7 @@ class _ScoredCellCelebrationWidgetState
     super.didUpdateWidget(oldWidget);
     if (widget.celebration?.eventId != oldWidget.celebration?.eventId &&
         widget.celebration != null) {
-      _buildChoreography(widget.celebration);
+      _buildNotebookScene(widget.celebration);
       _controller.duration = _durationFor(widget.celebration?.tier);
       _controller.forward(from: 0.0);
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -301,8 +289,8 @@ class _ScoredCellCelebrationWidgetState
                   targetAnchor: Alignment.center,
                   followerAnchor: Alignment.center,
                   child: SizedBox(
-                    width: 620,
-                    height: 480,
+                    width: 660,
+                    height: 500,
                     child: AnimatedBuilder(
                       animation: _controller,
                       builder: (context, _) {
@@ -313,16 +301,18 @@ class _ScoredCellCelebrationWidgetState
                           children: [
                             Positioned.fill(
                               child: CustomPaint(
-                                painter: _ScoreFireworksPainter(
+                                painter: _LivingPencilNotebookPainter(
                                   progress: t,
-                                  tier: widget.celebration!.tier,
-                                  rockets: _rockets,
-                                  particles: _particles,
-                                  seed: widget.circleSeed,
+                                  event: widget.celebration!,
+                                  doodleStrokes: _doodleStrokes,
+                                  debris: _debris,
+                                  airplaneFlightPath: _airplaneFlightPath,
+                                  circleColor: widget.circleColor,
+                                  circleSeed: widget.circleSeed,
                                 ),
                               ),
                             ),
-                            _buildFloatingBadge(t, widget.celebration!),
+                            _buildNotebookStampBanner(t, widget.celebration!),
                           ],
                         );
                       },
@@ -348,284 +338,461 @@ class _ScoredCellCelebrationWidgetState
   Duration _durationFor(ScoreCelebrationTier? tier) {
     switch (tier) {
       case ScoreCelebrationTier.jackpot:
-        return const Duration(milliseconds: 2100);
+        return const Duration(milliseconds: 2300);
       case ScoreCelebrationTier.great:
-        return const Duration(milliseconds: 1650);
+        return const Duration(milliseconds: 1800);
       case ScoreCelebrationTier.standard:
-        return const Duration(milliseconds: 1350);
+        return const Duration(milliseconds: 1400);
       case ScoreCelebrationTier.scratch:
       case null:
-        return const Duration(milliseconds: 1050);
+        return const Duration(milliseconds: 1250);
     }
   }
 
-  void _buildChoreography(ScoreCelebrationEvent? event) {
-    if (event == null) {
-      _rockets = const [];
-      _particles = const [];
-      return;
-    }
-    final rng = Random(event.eventId * 131 + event.category.index * 37);
-    final rockets = <_AerialRocket>[];
-    final particles = <_SketchParticle>[];
-
-    const palette = <Color>[
-      PencilPalette.greenPencil,
-      PencilPalette.bluePencil,
-      PencilPalette.redPencil,
-      PencilPalette.orangePencil,
-      Color(0xFFD49E2A), // Golden highlighter/pencil
-      Color(0xFF8E44AD), // Royal purple pencil
-    ];
-
-    void addBurst({
-      required Offset origin,
-      required int count,
-      required double startTime,
-      required double minSpeed,
-      required double maxSpeed,
-      required double upwardBias,
-      required double gravity,
-      required double sizeBase,
-      bool fullCircle = true,
-    }) {
-      for (int i = 0; i < count; i++) {
-        final double angle;
-        if (fullCircle) {
-          angle = (i / count) * pi * 2 + (rng.nextDouble() - 0.5) * 0.28;
-        } else {
-          angle = -pi * 0.92 +
-              (i / max(1, count - 1)) * pi * 0.84 +
-              (rng.nextDouble() - 0.5) * 0.2;
-        }
-        final speed = minSpeed + rng.nextDouble() * (maxSpeed - minSpeed);
-        final shape = switch (i % 5) {
-          0 => _ParticleShape.fivePointStar,
-          1 => _ParticleShape.fourPointSparkle,
-          2 => _ParticleShape.streamerRibbon,
-          3 => _ParticleShape.pencilShavingCurl,
-          _ => _ParticleShape.diamondConfetti,
-        };
-        particles.add(
-          _SketchParticle(
-            originOffset: origin,
-            vx: cos(angle) * speed,
-            vy: sin(angle) * speed - upwardBias,
-            gravity: gravity,
-            drag: 1.35 + rng.nextDouble() * 0.55,
-            flutterAmp: 12.0 + rng.nextDouble() * 18.0,
-            flutterFreq: 8.0 + rng.nextDouble() * 8.0,
-            flutterPhase: rng.nextDouble() * pi * 2,
-            size: sizeBase + rng.nextDouble() * 5.6,
-            initialRotation: rng.nextDouble() * pi * 2,
-            angularVelocity: (rng.nextDouble() - 0.5) * 11.0,
-            startTime: startTime,
-            lifeSpan: (1.0 - startTime).clamp(0.55, 1.0),
-            color: palette[(i + origin.dx.round().abs()) % palette.length],
-            shape: shape,
-          ),
-        );
+  /// Builds continuous single-stroke hand-drawn pentagram star (`☆`) at [center] with radius [r].
+  static Path _createPentagramStarPath(Offset center, double r,
+      {double rotation = 0.0}) {
+    // Order of vertices for a continuous 5-stroke hand-drawn star: 0 -> 2 -> 4 -> 1 -> 3 -> 0
+    const order = [0, 2, 4, 1, 3, 0];
+    final path = Path();
+    for (int i = 0; i < order.length; i++) {
+      final idx = order[i];
+      final angle = -pi / 2 + rotation + idx * (2 * pi / 5);
+      final pt = Offset(
+        center.dx + cos(angle) * r,
+        center.dy + sin(angle) * r,
+      );
+      if (i == 0) {
+        path.moveTo(pt.dx, pt.dy);
+      } else {
+        path.lineTo(pt.dx, pt.dy);
       }
     }
+    return path;
+  }
 
+  /// Builds a continuous hand-drawn 3-peak Crown doodle (`👑`) centered at [center].
+  static Path _createCrownPath(Offset center, double width, double height) {
+    final l = center.dx - width / 2;
+    final r = center.dx + width / 2;
+    final b = center.dy + height / 2;
+    final t = center.dy - height / 2;
+    return Path()
+      ..moveTo(l + width * 0.08, b)
+      ..lineTo(l, t + height * 0.18)
+      ..lineTo(center.dx - width * 0.22, b - height * 0.36)
+      ..lineTo(center.dx, t)
+      ..lineTo(center.dx + width * 0.22, b - height * 0.36)
+      ..lineTo(r, t + height * 0.18)
+      ..lineTo(r - width * 0.08, b)
+      ..close();
+  }
+
+  /// Builds a continuous loop-de-loop notebook spiral flourish (`➰`).
+  static Path _createSpiralFlourishPath(
+    Offset start, {
+    required bool goRight,
+    required double scale,
+  }) {
+    final dir = goRight ? 1.0 : -1.0;
+    final path = Path()..moveTo(start.dx, start.dy);
+    const steps = 36;
+    for (int i = 1; i <= steps; i++) {
+      final u = i / steps;
+      final theta = u * pi * 3.4;
+      final dx = dir * (u * 58.0 * scale + sin(theta) * 14.0 * scale);
+      final dy = -u * 26.0 * scale - (1.0 - cos(theta)) * 12.0 * scale;
+      path.lineTo(start.dx + dx, start.dy + dy);
+    }
+    return path;
+  }
+
+  /// Builds a swooshing double-underline + checkmark (`✓`) path underneath the cell.
+  static Path _createUnderlineAndCheckPath(Offset cellCenter) {
+    final path = Path()
+      // First underline stroke
+      ..moveTo(cellCenter.dx - 36, cellCenter.dy + 21)
+      ..quadraticBezierTo(
+        cellCenter.dx,
+        cellCenter.dy + 18,
+        cellCenter.dx + 38,
+        cellCenter.dy + 22,
+      )
+      // Second underline stroke
+      ..moveTo(cellCenter.dx + 34, cellCenter.dy + 26)
+      ..quadraticBezierTo(
+        cellCenter.dx,
+        cellCenter.dy + 24,
+        cellCenter.dx - 28,
+        cellCenter.dy + 27,
+      )
+      // Big swooshing Checkmark on the right side of the cell
+      ..moveTo(cellCenter.dx + 44, cellCenter.dy - 4)
+      ..lineTo(cellCenter.dx + 53, cellCenter.dy + 7)
+      ..quadraticBezierTo(
+        cellCenter.dx + 66,
+        cellCenter.dy - 14,
+        cellCenter.dx + 80,
+        cellCenter.dy - 26,
+      );
+    return path;
+  }
+
+  /// Builds a grumpy storm cloud + lightning bolt + `( ×_× )` doodle for scratches!
+  static Path _createGrumpyCloudDoodlePath(Offset center) {
+    final path = Path()
+      // Storm cloud puffs
+      ..moveTo(center.dx - 24, center.dy)
+      ..cubicTo(
+        center.dx - 32,
+        center.dy - 14,
+        center.dx - 12,
+        center.dy - 22,
+        center.dx - 4,
+        center.dy - 14,
+      )
+      ..cubicTo(
+        center.dx + 4,
+        center.dy - 26,
+        center.dx + 24,
+        center.dy - 20,
+        center.dx + 24,
+        center.dy - 6,
+      )
+      ..cubicTo(
+        center.dx + 34,
+        center.dy - 4,
+        center.dx + 30,
+        center.dy + 8,
+        center.dx + 18,
+        center.dy + 8,
+      )
+      ..lineTo(center.dx - 20, center.dy + 8)
+      ..close()
+      // Jagged lightning bolt below cloud
+      ..moveTo(center.dx + 2, center.dy + 9)
+      ..lineTo(center.dx - 7, center.dy + 22)
+      ..lineTo(center.dx + 3, center.dy + 21)
+      ..lineTo(center.dx - 5, center.dy + 35);
+    return path;
+  }
+
+  void _buildNotebookScene(ScoreCelebrationEvent? event) {
+    if (event == null) {
+      _doodleStrokes = const [];
+      _debris = const [];
+      _airplaneFlightPath = null;
+      return;
+    }
+
+    final rng = Random(event.eventId * 151 + event.category.index * 43);
+    final strokes = <_ProgressiveDoodleStroke>[];
+    final debris = <_NotebookDebris>[];
+    _airplaneFlightPath = null;
+
+    // Note: (0, 0) in stroke coordinates is the center of the 660x500 overlay (the scored cell center)
     switch (event.tier) {
       case ScoreCelebrationTier.scratch:
-        // 24 playful pink eraser crumbs & graphite dust motes puffing wide and tumbling down
-        for (int i = 0; i < 24; i++) {
-          final angle = -pi * 0.95 +
-              (i / 23.0) * pi * 0.90 +
-              (rng.nextDouble() - 0.5) * 0.25;
-          final speed = 85.0 + rng.nextDouble() * 110.0;
-          final isPinkCrumb = i % 3 != 0;
-          particles.add(
-            _SketchParticle(
-              originOffset: Offset(
-                (rng.nextDouble() - 0.5) * 26,
-                (rng.nextDouble() - 0.5) * 10,
-              ),
+        // 1. Grumpy storm cloud & lightning bolt sketched by pencil in upper-right margin
+        strokes.add(
+          _ProgressiveDoodleStroke(
+            path: _createGrumpyCloudDoodlePath(const Offset(72, -34)),
+            color: PencilPalette.graphiteDark,
+            strokeWidth: 2.0,
+            startTime: 0.25,
+            endTime: 0.72,
+            showPencilActor: true,
+          ),
+        );
+        // 2. Scribbled X marks left and right
+        final leftX = Path()
+          ..moveTo(-64, -10)
+          ..lineTo(-48, 8)
+          ..moveTo(-48, -10)
+          ..lineTo(-64, 8);
+        strokes.add(
+          _ProgressiveDoodleStroke(
+            path: leftX,
+            color: PencilPalette.redPencil,
+            strokeWidth: 2.2,
+            startTime: 0.15,
+            endTime: 0.45,
+          ),
+        );
+        // 3. 26 pink rubber eraser crumbs kicked out during the back-and-forth eraser scrub!
+        for (int i = 0; i < 26; i++) {
+          final angle = -pi * 0.9 + (i / 25.0) * pi * 0.8 +
+              (rng.nextDouble() - 0.5) * 0.3;
+          final speed = 65.0 + rng.nextDouble() * 95.0;
+          debris.add(
+            _NotebookDebris(
+              origin: Offset((rng.nextDouble() - 0.5) * 38, 0),
               vx: cos(angle) * speed,
-              vy: sin(angle) * speed - 35.0,
+              vy: sin(angle) * speed - 20.0,
               gravity: 250.0,
-              drag: 1.5,
-              flutterAmp: 10.0,
-              flutterFreq: 9.0,
-              flutterPhase: rng.nextDouble() * pi * 2,
-              size: 6.0 + rng.nextDouble() * 4.2,
+              size: 4.8 + rng.nextDouble() * 4.2,
               initialRotation: rng.nextDouble() * pi * 2,
-              angularVelocity: (rng.nextDouble() - 0.5) * 9.0,
-              startTime: 0.0,
-              lifeSpan: 0.95,
-              color: isPinkCrumb
-                  ? const Color(0xFFE58C9A)
-                  : PencilPalette.graphiteMedium,
-              shape: i % 4 == 0
-                  ? _ParticleShape.pencilShavingCurl
-                  : _ParticleShape.eraserCrumb,
+              spin: (rng.nextDouble() - 0.5) * 10.0,
+              startTime: 0.06 + (i % 5) * 0.04,
+              primaryColor: i % 4 == 0
+                  ? PencilPalette.graphiteMedium
+                  : const Color(0xFFF08A9D),
+              isWoodShavingFan: false,
             ),
           );
         }
         break;
 
       case ScoreCelebrationTier.standard:
-        // Central starburst (32 particles) + 2 crisscrossing aerial firework rockets!
-        addBurst(
-          origin: Offset.zero,
-          count: 32,
-          startTime: 0.0,
-          minSpeed: 115.0,
-          maxSpeed: 235.0,
-          upwardBias: 50.0,
-          gravity: 205.0,
-          sizeBase: 7.5,
-          fullCircle: true,
-        );
-        const stdRockets = <_AerialRocket>[
-          _AerialRocket(
-            targetOffset: Offset(-56, -78),
-            launchTime: 0.01,
-            detonateTime: 0.16,
+        // 1. Pencil sketches double-underline + swooshing Checkmark (t = 0.28 .. 0.62)
+        strokes.add(
+          _ProgressiveDoodleStroke(
+            path: _createUnderlineAndCheckPath(Offset.zero),
             color: PencilPalette.greenPencil,
+            strokeWidth: 2.4,
+            startTime: 0.26,
+            endTime: 0.60,
+            showPencilActor: true,
           ),
-          _AerialRocket(
-            targetOffset: Offset(56, -74),
-            launchTime: 0.06,
-            detonateTime: 0.22,
+        );
+        // 2. Hand-drawn 5-stroke Pentagram Stars left & right
+        strokes.add(
+          _ProgressiveDoodleStroke(
+            path: _createPentagramStarPath(
+              const Offset(-68, -16),
+              16.0,
+              rotation: -0.2,
+            ),
+            color: const Color(0xFFD49E2A),
+            strokeWidth: 2.0,
+            startTime: 0.30,
+            endTime: 0.66,
+            fillAfterComplete: const Color(0xFFFFF3B0),
+          ),
+        );
+        strokes.add(
+          _ProgressiveDoodleStroke(
+            path: _createPentagramStarPath(
+              const Offset(88, -8),
+              14.0,
+              rotation: 0.25,
+            ),
             color: PencilPalette.bluePencil,
+            strokeWidth: 1.9,
+            startTime: 0.42,
+            endTime: 0.74,
+            fillAfterComplete: const Color(0xFFDDF0FF),
           ),
-        ];
-        rockets.addAll(stdRockets);
-        for (final r in stdRockets) {
-          addBurst(
-            origin: r.targetOffset,
-            count: 20,
-            startTime: r.detonateTime,
-            minSpeed: 95.0,
-            maxSpeed: 185.0,
-            upwardBias: 25.0,
-            gravity: 175.0,
-            sizeBase: 7.0,
-            fullCircle: true,
+        );
+        // 3. 10 cedar-wood pencil sharpener shavings & graphite curls
+        for (int i = 0; i < 10; i++) {
+          final angle = -pi * 0.85 + (i / 9.0) * pi * 0.70;
+          final speed = 75.0 + rng.nextDouble() * 65.0;
+          debris.add(
+            _NotebookDebris(
+              origin: Offset((i.isEven ? -1 : 1) * 28.0, -8.0),
+              vx: cos(angle) * speed,
+              vy: sin(angle) * speed - 25.0,
+              gravity: 190.0,
+              size: 9.0 + rng.nextDouble() * 4.0,
+              initialRotation: rng.nextDouble() * pi * 2,
+              spin: (rng.nextDouble() - 0.5) * 6.0,
+              startTime: 0.18 + i * 0.02,
+              primaryColor: i.isEven
+                  ? PencilPalette.greenPencil
+                  : PencilPalette.bluePencil,
+              isWoodShavingFan: true,
+            ),
           );
         }
         break;
 
       case ScoreCelebrationTier.great:
-        // Central fountain (42 particles) + 3 staggered aerial firework rockets!
-        addBurst(
-          origin: Offset.zero,
-          count: 42,
-          startTime: 0.0,
-          minSpeed: 135.0,
-          maxSpeed: 280.0,
-          upwardBias: 70.0,
-          gravity: 230.0,
-          sizeBase: 8.6,
-          fullCircle: false,
+        // 1. Pencil sketches a 3D Crown right above the cell (t = 0.24 .. 0.56)
+        strokes.add(
+          _ProgressiveDoodleStroke(
+            path: _createCrownPath(const Offset(0, -34), 46.0, 24.0),
+            color: const Color(0xFFD49E2A),
+            strokeWidth: 2.4,
+            startTime: 0.24,
+            endTime: 0.56,
+            showPencilActor: true,
+            fillAfterComplete: const Color(0xFFFFEC8B),
+          ),
         );
-        const greatRockets = <_AerialRocket>[
-          _AerialRocket(
-            targetOffset: Offset(-88, -96),
-            launchTime: 0.01,
-            detonateTime: 0.16,
+        // 2. Left & Right Loop-de-Loop Spiral Flourishes
+        strokes.add(
+          _ProgressiveDoodleStroke(
+            path: _createSpiralFlourishPath(
+              const Offset(-46, 4),
+              goRight: false,
+              scale: 1.15,
+            ),
             color: PencilPalette.bluePencil,
+            strokeWidth: 2.1,
+            startTime: 0.20,
+            endTime: 0.58,
           ),
-          _AerialRocket(
-            targetOffset: Offset(88, -92),
-            launchTime: 0.07,
-            detonateTime: 0.23,
-            color: Color(0xFFD49E2A),
-          ),
-          _AerialRocket(
-            targetOffset: Offset(0, -132),
-            launchTime: 0.13,
-            detonateTime: 0.30,
+        );
+        strokes.add(
+          _ProgressiveDoodleStroke(
+            path: _createSpiralFlourishPath(
+              const Offset(46, 4),
+              goRight: true,
+              scale: 1.15,
+            ),
             color: PencilPalette.greenPencil,
+            strokeWidth: 2.1,
+            startTime: 0.24,
+            endTime: 0.62,
           ),
+        );
+        // 3. 4 Hand-Drawn 5-Stroke Pentagram Stars around the margin
+        final greatStarOffsets = <Offset>[
+          const Offset(-92, -36),
+          const Offset(92, -34),
+          const Offset(-62, -62),
+          const Offset(64, -60),
         ];
-        rockets.addAll(greatRockets);
-        for (final r in greatRockets) {
-          addBurst(
-            origin: r.targetOffset,
-            count: 28,
-            startTime: r.detonateTime,
-            minSpeed: 105.0,
-            maxSpeed: 225.0,
-            upwardBias: 30.0,
-            gravity: 185.0,
-            sizeBase: 8.2,
-            fullCircle: true,
+        final greatColors = <Color>[
+          const Color(0xFFD49E2A),
+          PencilPalette.greenPencil,
+          PencilPalette.redPencil,
+          PencilPalette.bluePencil,
+        ];
+        for (int i = 0; i < greatStarOffsets.length; i++) {
+          strokes.add(
+            _ProgressiveDoodleStroke(
+              path: _createPentagramStarPath(
+                greatStarOffsets[i],
+                16.0 + (i.isEven ? 3.0 : 0.0),
+                rotation: (i - 1.5) * 0.2,
+              ),
+              color: greatColors[i],
+              strokeWidth: 2.1,
+              startTime: 0.32 + i * 0.06,
+              endTime: 0.68 + i * 0.06,
+              showPencilActor: i == 3,
+              fillAfterComplete: greatColors[i].withValues(alpha: 0.22),
+            ),
+          );
+        }
+        // 4. 18 Scalloped Cedar-Wood Pencil Sharpener Shavings spiraling down
+        for (int i = 0; i < 18; i++) {
+          final angle = -pi * 0.90 + (i / 17.0) * pi * 0.80;
+          final speed = 95.0 + rng.nextDouble() * 90.0;
+          debris.add(
+            _NotebookDebris(
+              origin: Offset((rng.nextDouble() - 0.5) * 40, -10),
+              vx: cos(angle) * speed,
+              vy: sin(angle) * speed - 35.0,
+              gravity: 195.0,
+              size: 10.5 + rng.nextDouble() * 5.0,
+              initialRotation: rng.nextDouble() * pi * 2,
+              spin: (rng.nextDouble() - 0.5) * 7.5,
+              startTime: 0.14 + (i % 6) * 0.03,
+              primaryColor: greatColors[i % greatColors.length],
+              isWoodShavingFan: true,
+            ),
           );
         }
         break;
 
       case ScoreCelebrationTier.jackpot:
-        // Massive central supernova (52 particles) + 5 staggered aerial firework rockets!
-        addBurst(
-          origin: Offset.zero,
-          count: 52,
-          startTime: 0.0,
-          minSpeed: 155.0,
-          maxSpeed: 330.0,
-          upwardBias: 80.0,
-          gravity: 220.0,
-          sizeBase: 9.6,
-          fullCircle: true,
+        // 1. Giant Hand-Drawn 3D Royal Crown (`👑`) above the cell (t = 0.20 .. 0.50)
+        strokes.add(
+          _ProgressiveDoodleStroke(
+            path: _createCrownPath(const Offset(0, -38), 64.0, 32.0),
+            color: const Color(0xFFD49E2A),
+            strokeWidth: 2.8,
+            startTime: 0.18,
+            endTime: 0.48,
+            showPencilActor: true,
+            fillAfterComplete: const Color(0xFFFFE566),
+          ),
         );
-        const jackpotRockets = <_AerialRocket>[
-          _AerialRocket(
-            targetOffset: Offset(-124, -96),
-            launchTime: 0.01,
-            detonateTime: 0.14,
-            color: Color(0xFFD49E2A),
-          ),
-          _AerialRocket(
-            targetOffset: Offset(124, -92),
-            launchTime: 0.06,
-            detonateTime: 0.20,
-            color: PencilPalette.greenPencil,
-          ),
-          _AerialRocket(
-            targetOffset: Offset(-68, -152),
-            launchTime: 0.11,
-            detonateTime: 0.26,
+        // 2. Sweeping Double Underline & Flourishes
+        strokes.add(
+          _ProgressiveDoodleStroke(
+            path: _createUnderlineAndCheckPath(Offset.zero),
             color: PencilPalette.redPencil,
+            strokeWidth: 2.6,
+            startTime: 0.22,
+            endTime: 0.52,
           ),
-          _AerialRocket(
-            targetOffset: Offset(68, -148),
-            launchTime: 0.16,
-            detonateTime: 0.32,
-            color: PencilPalette.bluePencil,
-          ),
-          _AerialRocket(
-            targetOffset: Offset(0, -176),
-            launchTime: 0.21,
-            detonateTime: 0.38,
-            color: Color(0xFF8E44AD),
-          ),
+        );
+        // 3. 6 Large Continuous 5-Stroke Pentagram Stars across the notebook
+        final jackpotStars = <Offset>[
+          const Offset(-126, -42),
+          const Offset(126, -40),
+          const Offset(-86, -88),
+          const Offset(88, -86),
+          const Offset(-144, 18),
+          const Offset(144, 20),
         ];
-        rockets.addAll(jackpotRockets);
-        for (final r in jackpotRockets) {
-          addBurst(
-            origin: r.targetOffset,
-            count: 32,
-            startTime: r.detonateTime,
-            minSpeed: 115.0,
-            maxSpeed: 260.0,
-            upwardBias: 35.0,
-            gravity: 180.0,
-            sizeBase: 8.8,
-            fullCircle: true,
+        const jackpotPalette = <Color>[
+          Color(0xFFD49E2A),
+          PencilPalette.redPencil,
+          PencilPalette.greenPencil,
+          PencilPalette.bluePencil,
+          PencilPalette.orangePencil,
+          Color(0xFF8E44AD),
+        ];
+        for (int i = 0; i < jackpotStars.length; i++) {
+          strokes.add(
+            _ProgressiveDoodleStroke(
+              path: _createPentagramStarPath(
+                jackpotStars[i],
+                19.0 + (i % 2) * 4.0,
+                rotation: (i - 2.5) * 0.18,
+              ),
+              color: jackpotPalette[i],
+              strokeWidth: 2.3,
+              startTime: 0.24 + i * 0.05,
+              endTime: 0.62 + i * 0.05,
+              showPencilActor: i == 1 || i == 4,
+              fillAfterComplete: jackpotPalette[i].withValues(alpha: 0.25),
+            ),
+          );
+        }
+        // 4. Hand-Drawn Paper Airplane Loop-de-Loop Flight Path across the scorecard!
+        _airplaneFlightPath = Path()
+          ..moveTo(-180, 42)
+          ..cubicTo(-95, 25, -45, -15, 0, -48)
+          // Full loop-de-loop high above the cell!
+          ..cubicTo(48, -82, 68, -148, 8, -152)
+          ..cubicTo(-52, -156, -32, -82, 28, -58)
+          // Swoop out toward upper-right margin
+          ..cubicTo(98, -32, 165, -75, 225, -125);
+
+        // 5. 24 Cedar-Wood & Gold Pencil Sharpener Curls
+        for (int i = 0; i < 24; i++) {
+          final angle = -pi * 0.94 + (i / 23.0) * pi * 0.88;
+          final speed = 115.0 + rng.nextDouble() * 115.0;
+          debris.add(
+            _NotebookDebris(
+              origin: Offset((rng.nextDouble() - 0.5) * 52, -12),
+              vx: cos(angle) * speed,
+              vy: sin(angle) * speed - 45.0,
+              gravity: 190.0,
+              size: 11.5 + rng.nextDouble() * 5.5,
+              initialRotation: rng.nextDouble() * pi * 2,
+              spin: (rng.nextDouble() - 0.5) * 8.5,
+              startTime: 0.10 + (i % 8) * 0.03,
+              primaryColor: jackpotPalette[i % jackpotPalette.length],
+              isWoodShavingFan: true,
+            ),
           );
         }
         break;
     }
 
-    _rockets = rockets;
-    _particles = particles;
+    _doodleStrokes = strokes;
+    _debris = debris;
   }
 
   double _computeNumberPopScale(double t) {
-    // Dramatic elastic pop during first 35% of animation: 0.42 -> 1.46 -> 0.92 -> 1.0
+    // Elastic stamp pop during first 35% of animation: 0.42 -> 1.46 -> 0.92 -> 1.0
     if (t >= 0.36) return 1.0;
     final u = (t / 0.36).clamp(0.0, 1.0);
     if (u < 0.40) {
@@ -656,25 +823,33 @@ class _ScoredCellCelebrationWidgetState
         builder: (context, _) {
           final t = _controller.value;
           final isAnimating = _controller.isAnimating;
-          // Self-drawing circle whips around the score in the first 32% of the animation
+          // Self-drawing circle whips around the score in the first 28% of the animation
           final circleProgress =
-              Curves.easeOutCubic.transform((t / 0.32).clamp(0.0, 1.0));
+              Curves.easeOutCubic.transform((t / 0.28).clamp(0.0, 1.0));
           final numberScale = isAnimating ? _computeNumberPopScale(t) : 1.0;
 
-          // Subtle paper micro-shake on jackpot/great during first 18% of animation
+          // Subtle paper micro-shake on jackpot/great or eraser scrub on scratch
           double shakeDx = 0.0;
           double shakeDy = 0.0;
-          if (isAnimating &&
-              (widget.celebration?.tier == ScoreCelebrationTier.jackpot ||
-                  widget.celebration?.tier == ScoreCelebrationTier.great) &&
-              t < 0.18) {
-            final damp = 1.0 - (t / 0.18);
-            final amp =
-                widget.celebration?.tier == ScoreCelebrationTier.jackpot
-                    ? 3.6
-                    : 2.0;
-            shakeDx = sin(t * pi * 42) * amp * damp;
-            shakeDy = cos(t * pi * 34) * (amp * 0.65) * damp;
+          if (isAnimating) {
+            if (widget.celebration?.tier == ScoreCelebrationTier.scratch &&
+                t >= 0.12 &&
+                t <= 0.52) {
+              // Horizontal back-and-forth vibration while the pink eraser scrubs the cell!
+              final scrubT = (t - 0.12) / 0.40;
+              shakeDx = sin(scrubT * pi * 12) * 2.6 * (1.0 - scrubT);
+            } else if ((widget.celebration?.tier ==
+                        ScoreCelebrationTier.jackpot ||
+                    widget.celebration?.tier == ScoreCelebrationTier.great) &&
+                t < 0.18) {
+              final damp = 1.0 - (t / 0.18);
+              final amp =
+                  widget.celebration?.tier == ScoreCelebrationTier.jackpot
+                      ? 3.6
+                      : 2.0;
+              shakeDx = sin(t * pi * 42) * amp * damp;
+              shakeDy = cos(t * pi * 34) * (amp * 0.65) * damp;
+            }
           }
 
           return Transform.translate(
@@ -732,66 +907,56 @@ class _ScoredCellCelebrationWidgetState
     );
   }
 
-  Widget _buildFloatingBadge(double t, ScoreCelebrationEvent event) {
-    // Badge stamps in with elastic bounce, rises 68px above cell, and fades out smoothly
-    final enterScale = Curves.elasticOut.transform((t / 0.28).clamp(0.0, 1.0));
-    final opacity = t < 0.68
+  /// Hand-drawn Teacher's Grade Stamp / Notebook Ribbon Banner above the cell.
+  Widget _buildNotebookStampBanner(double t, ScoreCelebrationEvent event) {
+    final enterScale =
+        Curves.elasticOut.transform(((t - 0.08) / 0.30).clamp(0.0, 1.0));
+    final opacity = t < 0.72
         ? 1.0
-        : (1.0 - Curves.easeIn.transform(((t - 0.68) / 0.32).clamp(0.0, 1.0)));
-    final dy = -26.0 - Curves.easeOutCubic.transform(t) * 48.0;
+        : (1.0 - Curves.easeIn.transform(((t - 0.72) / 0.28).clamp(0.0, 1.0)));
+    final dy = -52.0 - Curves.easeOutCubic.transform(t) * 26.0;
 
     final isJackpot = event.tier == ScoreCelebrationTier.jackpot;
     final isGreat = event.tier == ScoreCelebrationTier.great;
     final isScratch = event.tier == ScoreCelebrationTier.scratch;
 
-    final Color borderColor = isJackpot
-        ? const Color(0xFFD49E2A)
+    final Color inkColor = isJackpot
+        ? PencilPalette.redPencil
         : (isScratch
             ? PencilPalette.redPencil
             : (isGreat ? PencilPalette.greenPencil : PencilPalette.bluePencil));
-    final Color fillColor = isJackpot
-        ? const Color(0xFFFFF6C4)
-        : (isScratch ? const Color(0xFFFFF0F0) : const Color(0xFFEAF8EE));
+    final Color paperFill = isJackpot
+        ? const Color(0xFFFFF8DC)
+        : (isScratch ? const Color(0xFFFFF2F2) : const Color(0xFFF4FBF4));
 
     return Transform.translate(
       offset: Offset(0, dy),
       child: Opacity(
         opacity: opacity.clamp(0.0, 1.0),
         child: Transform.rotate(
-          angle: isJackpot ? -0.045 : -0.025,
+          angle: isJackpot ? -0.065 : (isScratch ? 0.04 : -0.035),
           child: Transform.scale(
             scale: enterScale,
-            child: Container(
+            child: PencilBox(
+              borderColor: inkColor,
+              fillColor: paperFill,
+              doubleBorder: isJackpot || isGreat,
+              hasPencilShading: true,
+              shadingOpacity: 0.14,
+              strokeWidth: isJackpot ? 2.1 : 1.6,
+              seed: event.eventId * 19 + 7,
               padding: EdgeInsets.symmetric(
-                horizontal: isJackpot ? 12 : (isGreat ? 10 : 8),
-                vertical: isJackpot ? 4.5 : 3.0,
-              ),
-              decoration: BoxDecoration(
-                color: fillColor,
-                borderRadius: BorderRadius.circular(7),
-                border: Border.all(
-                  color: borderColor,
-                  width: isJackpot ? 2.0 : 1.5,
-                ),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x29000000),
-                    blurRadius: 6,
-                    offset: Offset(0, 2.5),
-                  ),
-                ],
+                horizontal: isJackpot ? 14 : (isGreat ? 11 : 9),
+                vertical: isJackpot ? 5 : 3,
               ),
               child: Text(
                 event.floatingBadgeText,
                 maxLines: 1,
                 style: GoogleFonts.patrickHand(
-                  fontSize: isJackpot ? 18.0 : (isGreat ? 15.5 : 14.0),
+                  fontSize: isJackpot ? 19.0 : (isGreat ? 16.0 : 14.5),
                   fontWeight: FontWeight.bold,
-                  color: isScratch
-                      ? PencilPalette.redPencil
-                      : (isJackpot
-                          ? const Color(0xFF8F5E00)
-                          : PencilPalette.greenPencil),
+                  letterSpacing: isJackpot ? 0.6 : 0.2,
+                  color: inkColor,
                   height: 1.05,
                 ),
               ),
@@ -803,346 +968,556 @@ class _ScoredCellCelebrationWidgetState
   }
 }
 
-class _ScoreFireworksPainter extends CustomPainter {
+/// CustomPainter that brings the notebook page to life with:
+/// - A Chisel-Tip Yellow Highlighter Marker sweeping across the cell (`great` / `jackpot`)
+/// - A 3D Wooden Pencil (`_drawWoodenPencil`) physically tracing the circle & doodles
+/// - Flip-to-Pink-Eraser back-and-forth scrubbing on `scratch` scores
+/// - Progressive `PathMetric` self-sketching margin doodles (Crown, Pentagram Stars, Spirals, Checkmark, Storm Cloud)
+/// - A Hand-Drawn Paper Airplane flying a loop-de-loop with a dashed pencil trail on `jackpot`!
+class _LivingPencilNotebookPainter extends CustomPainter {
   final double progress;
-  final ScoreCelebrationTier tier;
-  final List<_AerialRocket> rockets;
-  final List<_SketchParticle> particles;
-  final int seed;
+  final ScoreCelebrationEvent event;
+  final List<_ProgressiveDoodleStroke> doodleStrokes;
+  final List<_NotebookDebris> debris;
+  final Path? airplaneFlightPath;
+  final Color circleColor;
+  final int circleSeed;
 
-  const _ScoreFireworksPainter({
+  const _LivingPencilNotebookPainter({
     required this.progress,
-    required this.tier,
-    required this.rockets,
-    required this.particles,
-    required this.seed,
+    required this.event,
+    required this.doodleStrokes,
+    required this.debris,
+    required this.airplaneFlightPath,
+    required this.circleColor,
+    required this.circleSeed,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
 
-    // 1. Warm highlighter burst glow at cell center during first 35%
-    if (progress < 0.35 && tier != ScoreCelebrationTier.scratch) {
-      final glowT = (progress / 0.35).clamp(0.0, 1.0);
-      final glowRadius = 24.0 + Curves.easeOut.transform(glowT) *
-          (tier == ScoreCelebrationTier.jackpot ? 95.0 : 62.0);
-      final glowColor = tier == ScoreCelebrationTier.jackpot
-          ? const Color(0xFFFFE066)
-          : const Color(0xFFB7F0C0);
-      final glowPaint = Paint()
-        ..shader = RadialGradient(
-          colors: [
-            glowColor.withValues(alpha: (1.0 - glowT) * 0.48),
-            glowColor.withValues(alpha: 0.0),
-          ],
-        ).createShader(Rect.fromCircle(center: center, radius: glowRadius));
-      canvas.drawCircle(center, glowRadius, glowPaint);
+    // 1. Chisel-Tip Fluorescent Yellow Highlighter Swatch & Marker Actor (Great & Jackpot)
+    if (event.tier == ScoreCelebrationTier.great ||
+        event.tier == ScoreCelebrationTier.jackpot) {
+      _paintHighlighterSweep(canvas, center);
     }
 
-    // 2. Long Comic Starburst Impact Rays radiating out (up to 110px!)
-    if (progress < 0.46) {
-      final rayT = (progress / 0.46).clamp(0.0, 1.0);
-      final rayOpacity = (1.0 - Curves.easeIn.transform(rayT)).clamp(0.0, 1.0);
-      final rayCount = switch (tier) {
-        ScoreCelebrationTier.jackpot => 22,
-        ScoreCelebrationTier.great => 16,
-        ScoreCelebrationTier.standard => 12,
-        ScoreCelebrationTier.scratch => 8,
-      };
-      final maxRayRadius = switch (tier) {
-        ScoreCelebrationTier.jackpot => 125.0,
-        ScoreCelebrationTier.great => 92.0,
-        ScoreCelebrationTier.standard => 70.0,
-        ScoreCelebrationTier.scratch => 48.0,
-      };
+    // 2. Progressive Self-Drawing Margin Doodles (`PathMetrics.extractPath`)
+    Offset? activeDoodlePencilTip;
+    Color activeDoodleLeadColor = circleColor;
 
-      final rayPaint = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = tier == ScoreCelebrationTier.jackpot ? 2.4 : 1.8
-        ..strokeCap = StrokeCap.round;
+    for (final stroke in doodleStrokes) {
+      if (progress <= stroke.startTime) continue;
+      final localT = ((progress - stroke.startTime) /
+              max(0.01, stroke.endTime - stroke.startTime))
+          .clamp(0.0, 1.0);
+      final fadeOut = progress < 0.78
+          ? 1.0
+          : (1.0 - Curves.easeIn.transform((progress - 0.78) / 0.22))
+              .clamp(0.0, 1.0);
+      if (fadeOut <= 0.001) continue;
 
-      for (int i = 0; i < rayCount; i++) {
-        final angle = (i / rayCount) * pi * 2 + (seed % 7) * 0.12;
-        final isLongRay = i.isEven;
-        final reach = maxRayRadius * (isLongRay ? 1.0 : 0.68);
-        final innerR = 20.0 + Curves.easeOut.transform(rayT) * (reach * 0.48);
-        final outerR = 32.0 + Curves.easeOutCubic.transform(rayT) * reach;
+      final translatedPath = stroke.path.shift(center);
 
-        final p1 = Offset(
-          center.dx + cos(angle) * innerR,
-          center.dy + sin(angle) * innerR * 0.82,
-        );
-        final p2 = Offset(
-          center.dx + cos(angle) * outerR,
-          center.dy + sin(angle) * outerR * 0.82,
-        );
-
-        final color = tier == ScoreCelebrationTier.scratch
-            ? PencilPalette.redPencil
-            : (i % 3 == 0
-                ? PencilPalette.greenPencil
-                : (i % 3 == 1
-                    ? const Color(0xFFD49E2A)
-                    : PencilPalette.bluePencil));
-        rayPaint.color = color.withValues(alpha: rayOpacity * 0.88);
-        canvas.drawLine(p1, p2, rayPaint);
-      }
-    }
-
-    // 3. Expanding Double-Stroke Shockwave Rings (at origin and aerial burst centers)
-    if (tier != ScoreCelebrationTier.scratch && progress < 0.62) {
-      final ringT = Curves.easeOutCubic.transform(
-        (progress / 0.62).clamp(0.0, 1.0),
-      );
-      final ringAlpha = (1.0 - ringT) * 0.7;
-      final maxRadius = tier == ScoreCelebrationTier.jackpot
-          ? 145.0
-          : (tier == ScoreCelebrationTier.great ? 105.0 : 75.0);
-
-      final ringPaint = Paint()
-        ..color = (tier == ScoreCelebrationTier.jackpot
-                ? const Color(0xFFD49E2A)
-                : PencilPalette.greenPencil)
-            .withValues(alpha: ringAlpha)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
-
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: center,
-          width: 36.0 + ringT * maxRadius * 2.0,
-          height: 24.0 + ringT * maxRadius * 1.55,
-        ),
-        ringPaint,
-      );
-    }
-
-    // 4. Ascending Aerial Firework Rockets (spark trail + glowing head before detonation)
-    for (final rocket in rockets) {
-      if (progress >= rocket.launchTime && progress <= rocket.detonateTime) {
-        final u = ((progress - rocket.launchTime) /
-                max(0.01, rocket.detonateTime - rocket.launchTime))
-            .clamp(0.0, 1.0);
-        final curvedU = Curves.easeOutQuad.transform(u);
-        final headPos = Offset(
-          center.dx + rocket.targetOffset.dx * curvedU,
-          center.dy + rocket.targetOffset.dy * curvedU,
-        );
-        final tailU = max(0.0, curvedU - 0.35);
-        final tailPos = Offset(
-          center.dx + rocket.targetOffset.dx * tailU,
-          center.dy + rocket.targetOffset.dy * tailU,
-        );
-
-        final trailPaint = Paint()
-          ..color = rocket.color.withValues(alpha: 0.85)
-          ..strokeWidth = 2.5
-          ..strokeCap = StrokeCap.round
-          ..style = PaintingStyle.stroke;
-        canvas.drawLine(tailPos, headPos, trailPaint);
-
-        // Bright spark head at tip of ascending rocket
-        final headPaint = Paint()
-          ..color = const Color(0xFFFFD700)
+      // Optional soft colored-pencil fill once the doodle outline completes
+      if (localT >= 0.85 && stroke.fillAfterComplete != null) {
+        final fillAlpha =
+            ((localT - 0.85) / 0.15).clamp(0.0, 1.0) * fadeOut * 0.85;
+        final fillPaint = Paint()
+          ..color = stroke.fillAfterComplete!.withValues(alpha: fillAlpha)
           ..style = PaintingStyle.fill;
-        canvas.drawCircle(headPos, 4.2, headPaint);
-      } else if (progress > rocket.detonateTime &&
-          progress < rocket.detonateTime + 0.28) {
-        // Aerial detonation flash ring!
-        final flashT = ((progress - rocket.detonateTime) / 0.28).clamp(0.0, 1.0);
-        final burstCenter = center + rocket.targetOffset;
-        final ringPaint = Paint()
-          ..color = rocket.color.withValues(alpha: (1.0 - flashT) * 0.75)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.8;
-        canvas.drawCircle(
-          burstCenter,
-          8.0 + Curves.easeOut.transform(flashT) * 58.0,
-          ringPaint,
-        );
+        canvas.drawPath(translatedPath, fillPaint);
+      }
+
+      final strokePaint = Paint()
+        ..color = stroke.color.withValues(alpha: fadeOut * 0.92)
+        ..strokeWidth = stroke.strokeWidth
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+
+      final metrics = translatedPath.computeMetrics().toList();
+      if (metrics.isNotEmpty) {
+        final totalLen =
+            metrics.fold<double>(0.0, (sum, m) => sum + m.length);
+        final targetLen = totalLen * Curves.easeInOut.transform(localT);
+        double drawnSoFar = 0.0;
+
+        for (final m in metrics) {
+          if (drawnSoFar + m.length <= targetLen) {
+            canvas.drawPath(m.extractPath(0.0, m.length), strokePaint);
+            drawnSoFar += m.length;
+          } else {
+            final rem = max(0.0, targetLen - drawnSoFar);
+            if (rem > 0) {
+              canvas.drawPath(m.extractPath(0.0, rem), strokePaint);
+              if (stroke.showPencilActor && localT < 0.99) {
+                final tangent = m.getTangentForOffset(rem);
+                if (tangent != null) {
+                  activeDoodlePencilTip = tangent.position;
+                  activeDoodleLeadColor = stroke.color;
+                }
+              }
+            }
+            break;
+          }
+        }
       }
     }
 
-    // 5. Hand-Sketched Firework Stars, Ribbons, Curls & Confetti with Motion Trails
-    for (final p in particles) {
-      if (progress <= p.startTime) continue;
-      final localT =
-          ((progress - p.startTime) / p.lifeSpan).clamp(0.0, 1.0);
+    // 3. Hand-Drawn Paper Airplane Loop-de-Loop + Dashed Trajectory (Jackpot!)
+    if (airplaneFlightPath != null && progress >= 0.14 && progress <= 0.92) {
+      _paintPaperAirplaneLoop(canvas, center);
+    }
+
+    // 4. Scalloped Cedar-Wood Pencil Sharpener Shavings & Pink Eraser Crumbs
+    for (final item in debris) {
+      if (progress <= item.startTime) continue;
+      final localT = ((progress - item.startTime) / (1.0 - item.startTime))
+          .clamp(0.0, 1.0);
       if (localT >= 1.0) continue;
 
-      final pos = center + p.positionAt(localT);
-      final prevPos = center + p.positionAt(max(0.0, localT - 0.055));
-      final rot = p.initialRotation + p.angularVelocity * localT;
-
-      // Twinkle & smooth fade out in the last 30% of particle life
-      final fadeAlpha = localT < 0.70
+      final dt = localT * 0.85;
+      final px = center.dx + item.origin.dx + item.vx * dt;
+      final py = center.dy +
+          item.origin.dy +
+          item.vy * dt +
+          0.5 * item.gravity * dt * dt;
+      final rot = item.initialRotation + item.spin * dt;
+      final fade = localT < 0.70
           ? 1.0
-          : (1.0 - Curves.easeIn.transform((localT - 0.70) / 0.30))
-              .clamp(0.0, 1.0);
-      final twinkle = 0.88 + 0.18 * sin(localT * pi * 10 + p.flutterPhase);
-      final scaleFactor = localT < 0.10
-          ? (localT / 0.10)
-          : (1.0 - localT * 0.22) * twinkle;
-      final currentSize = max(2.0, p.size * scaleFactor);
-
-      // Draw motion-blur pencil tail behind fast-moving firework particles
-      if (localT < 0.65 && p.shape != _ParticleShape.eraserCrumb) {
-        final tailPaint = Paint()
-          ..color = p.color.withValues(alpha: fadeAlpha * 0.38)
-          ..strokeWidth = max(1.0, currentSize * 0.28)
-          ..strokeCap = StrokeCap.round;
-        canvas.drawLine(prevPos, pos, tailPaint);
-      }
+          : (1.0 - ((localT - 0.70) / 0.30)).clamp(0.0, 1.0);
 
       canvas.save();
-      canvas.translate(pos.dx, pos.dy);
+      canvas.translate(px, py);
       canvas.rotate(rot);
-
-      final fillPaint = Paint()
-        ..color = p.color.withValues(alpha: fadeAlpha * 0.92)
-        ..style = PaintingStyle.fill;
-      final strokePaint = Paint()
-        ..color = p.color.withValues(alpha: fadeAlpha)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.45
-        ..strokeCap = StrokeCap.round;
-
-      switch (p.shape) {
-        case _ParticleShape.fivePointStar:
-          _drawFivePointStar(canvas, currentSize, fillPaint, strokePaint);
-          break;
-        case _ParticleShape.fourPointSparkle:
-          _drawFourPointSparkle(canvas, currentSize, fillPaint, strokePaint);
-          break;
-        case _ParticleShape.streamerRibbon:
-          _drawStreamerRibbon(
-            canvas,
-            currentSize,
-            localT,
-            p.flutterPhase,
-            strokePaint,
-          );
-          break;
-        case _ParticleShape.pencilShavingCurl:
-          _drawPencilCurl(canvas, currentSize, strokePaint);
-          break;
-        case _ParticleShape.diamondConfetti:
-          _drawDiamond(canvas, currentSize, fillPaint, strokePaint);
-          break;
-        case _ParticleShape.eraserCrumb:
-          canvas.drawRRect(
-            RRect.fromRectAndRadius(
-              Rect.fromCenter(
-                center: Offset.zero,
-                width: currentSize * 1.25,
-                height: currentSize * 0.85,
-              ),
-              const Radius.circular(2.0),
+      if (item.isWoodShavingFan) {
+        _drawCedarPencilShavingCurl(
+          canvas,
+          item.size,
+          item.primaryColor,
+          fade,
+        );
+      } else {
+        // Pink rubber eraser crumb
+        final crumbPaint = Paint()
+          ..color = item.primaryColor.withValues(alpha: fade * 0.9)
+          ..style = PaintingStyle.fill;
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(
+              center: Offset.zero,
+              width: item.size * 1.3,
+              height: item.size * 0.8,
             ),
-            fillPaint,
-          );
-          break;
+            const Radius.circular(2.2),
+          ),
+          crumbPaint,
+        );
       }
-
       canvas.restore();
     }
-  }
 
-  void _drawFivePointStar(
-    Canvas canvas,
-    double r,
-    Paint fillPaint,
-    Paint strokePaint,
-  ) {
-    final path = Path();
-    final innerR = r * 0.44;
-    for (int i = 0; i < 10; i++) {
-      final radius = i.isEven ? r : innerR;
-      final angle = -pi / 2 + i * (pi / 5);
-      final x = cos(angle) * radius;
-      final y = sin(angle) * radius;
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
+    // 5. The Hero 3D Wooden Pencil Actor!
+    //    - During t = 0.00 .. 0.28: Physically traces the oval loop around the scored cell!
+    //    - During t = 0.28 .. 0.65 on Scratch: Flips 180° so its pink rubber eraser scrubs the cell!
+    //    - During t = 0.28 .. 0.68 on Standard/Great/Jackpot: Follows activeDoodlePencilTip!
+    if (progress < 0.28) {
+      final u = Curves.easeOutCubic.transform((progress / 0.28).clamp(0.0, 1.0));
+      const totalAngle = pi * 2.25;
+      final startAngle = -pi * 0.6 + (circleSeed % 5) * 0.1;
+      final angle = startAngle + u * totalAngle;
+      const rx = 34.0;
+      const ry = 15.0;
+      final tipPos = Offset(
+        center.dx + rx * cos(angle),
+        center.dy + ry * sin(angle),
+      );
+      final wobble = sin(u * pi * 12) * 0.08;
+      _drawWoodenPencil(
+        canvas,
+        targetPoint: tipPos,
+        angleRadians: -pi * 0.28 + wobble,
+        leadColor: circleColor,
+        eraserDown: false,
+        opacity: 1.0,
+      );
+    } else if (event.tier == ScoreCelebrationTier.scratch && progress < 0.62) {
+      // Flip pencil 180° so the PINK ERASER END scrubs horizontally back-and-forth across the cell!
+      final scrubU = ((progress - 0.28) / 0.34).clamp(0.0, 1.0);
+      final fade = scrubU > 0.82 ? (1.0 - (scrubU - 0.82) / 0.18) : 1.0;
+      final scrubX = center.dx + sin(scrubU * pi * 10) * 24.0;
+      final scrubY = center.dy + cos(scrubU * pi * 5) * 3.0;
+      final tilt = -pi * 0.35 + cos(scrubU * pi * 10) * 0.14;
+      _drawWoodenPencil(
+        canvas,
+        targetPoint: Offset(scrubX, scrubY),
+        angleRadians: tilt,
+        leadColor: PencilPalette.redPencil,
+        eraserDown: true,
+        opacity: fade.clamp(0.0, 1.0),
+      );
+    } else if (activeDoodlePencilTip != null && progress < 0.72) {
+      final fade = progress > 0.60 ? (1.0 - (progress - 0.60) / 0.12) : 1.0;
+      final wobble = sin(progress * pi * 24) * 0.07;
+      _drawWoodenPencil(
+        canvas,
+        targetPoint: activeDoodlePencilTip,
+        angleRadians: -pi * 0.26 + wobble,
+        leadColor: activeDoodleLeadColor,
+        eraserDown: false,
+        opacity: fade.clamp(0.0, 1.0),
+      );
     }
-    path.close();
-    canvas.drawPath(path, fillPaint);
-    canvas.drawPath(path, strokePaint);
   }
 
-  void _drawFourPointSparkle(
-    Canvas canvas,
-    double r,
-    Paint fillPaint,
-    Paint strokePaint,
-  ) {
-    final path = Path();
-    final innerR = r * 0.28;
-    for (int i = 0; i < 8; i++) {
-      final radius = i.isEven ? r : innerR;
-      final angle = i * (pi / 4);
-      final x = cos(angle) * radius;
-      final y = sin(angle) * radius;
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
-    canvas.drawPath(path, fillPaint);
-    canvas.drawPath(path, strokePaint);
-  }
+  /// Paints a wet fluorescent chisel-tip highlighter swipe across the cell (`t = 0.02 .. 0.32`).
+  void _paintHighlighterSweep(Canvas canvas, Offset center) {
+    final sweepU = Curves.easeOutCubic.transform(
+      ((progress - 0.02) / 0.28).clamp(0.0, 1.0),
+    );
+    if (sweepU <= 0.0) return;
 
-  void _drawStreamerRibbon(
-    Canvas canvas,
-    double r,
-    double localT,
-    double phase,
-    Paint strokePaint,
-  ) {
-    final wave = sin(localT * pi * 6 + phase) * r * 0.65;
-    final ribbonPaint = Paint()
-      ..color = strokePaint.color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2
-      ..strokeCap = StrokeCap.round;
-    final path = Path()
-      ..moveTo(-r * 1.2, -wave * 0.4)
-      ..cubicTo(-r * 0.4, wave, r * 0.4, -wave, r * 1.2, wave * 0.4);
-    canvas.drawPath(path, ribbonPaint);
-  }
+    final fade = progress < 0.72
+        ? 1.0
+        : (1.0 - ((progress - 0.72) / 0.28)).clamp(0.0, 1.0);
+    const startX = -44.0;
+    const endX = 46.0;
+    final currentRightX = startX + (endX - startX) * sweepU;
 
-  void _drawPencilCurl(Canvas canvas, double r, Paint strokePaint) {
-    final path = Path()
-      ..moveTo(-r * 0.85, 0)
-      ..quadraticBezierTo(-r * 0.2, -r * 0.95, r * 0.3, 0)
-      ..quadraticBezierTo(r * 0.75, r * 0.75, r * 1.05, -r * 0.35);
-    canvas.drawPath(path, strokePaint);
-  }
-
-  void _drawDiamond(
-    Canvas canvas,
-    double r,
-    Paint fillPaint,
-    Paint strokePaint,
-  ) {
-    final path = Path()
-      ..moveTo(0, -r * 0.9)
-      ..lineTo(r * 0.58, 0)
-      ..lineTo(0, r * 0.9)
-      ..lineTo(-r * 0.58, 0)
+    // Slanted chisel-tip parallelogram swatch
+    final swatchPath = Path()
+      ..moveTo(center.dx + startX + 5, center.dy - 14)
+      ..lineTo(center.dx + currentRightX + 5, center.dy - 14)
+      ..lineTo(center.dx + currentRightX - 5, center.dy + 14)
+      ..lineTo(center.dx + startX - 5, center.dy + 14)
       ..close();
-    canvas.drawPath(path, fillPaint);
-    canvas.drawPath(path, strokePaint);
+
+    final swatchColor = event.tier == ScoreCelebrationTier.jackpot
+        ? const Color(0xFFFFE633)
+        : const Color(0xFFB4F87E);
+    final swatchPaint = Paint()
+      ..color = swatchColor.withValues(alpha: 0.38 * fade)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(swatchPath, swatchPaint);
+
+    // Draw the Chisel-Tip Highlighter Marker while it is actively swiping (progress < 0.32)
+    if (progress < 0.32) {
+      final markerFade =
+          progress > 0.24 ? (1.0 - (progress - 0.24) / 0.08) : 1.0;
+      _drawChiselHighlighterMarker(
+        canvas,
+        tipPoint: Offset(center.dx + currentRightX, center.dy),
+        markerColor: swatchColor,
+        opacity: markerFade.clamp(0.0, 1.0),
+      );
+    }
+  }
+
+  /// Paints a hand-drawn paper airplane (`✈️`) flying a loop-de-loop with a dashed pencil trail!
+  void _paintPaperAirplaneLoop(Canvas canvas, Offset center) {
+    final flightU = Curves.easeInOutCubic.transform(
+      ((progress - 0.14) / 0.72).clamp(0.0, 1.0),
+    );
+    final fade = progress < 0.76
+        ? 1.0
+        : (1.0 - ((progress - 0.76) / 0.16)).clamp(0.0, 1.0);
+    if (fade <= 0.01) return;
+
+    final shiftedPath = airplaneFlightPath!.shift(center);
+    final metrics = shiftedPath.computeMetrics().toList();
+    if (metrics.isEmpty) return;
+    final metric = metrics.first;
+    final currentDist = metric.length * flightU;
+
+    // 1. Draw dashed hand-sketched pencil trajectory trail behind the paper airplane
+    final dashPaint = Paint()
+      ..color = PencilPalette.bluePencil.withValues(alpha: fade * 0.65)
+      ..strokeWidth = 1.8
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    const dashLen = 7.5;
+    const gapLen = 6.0;
+    double d = max(0.0, currentDist - 210.0);
+    while (d < currentDist - 6.0) {
+      final segEnd = min(currentDist - 6.0, d + dashLen);
+      canvas.drawPath(metric.extractPath(d, segEnd), dashPaint);
+      d += dashLen + gapLen;
+    }
+
+    // 2. Draw the folded paper airplane at the leading tangent!
+    final tangent = metric.getTangentForOffset(currentDist);
+    if (tangent == null) return;
+
+    canvas.save();
+    canvas.translate(tangent.position.dx, tangent.position.dy);
+    canvas.rotate(-tangent.angle);
+
+    final wingFill = Paint()
+      ..color = const Color(0xFFFAF8F2).withValues(alpha: fade)
+      ..style = PaintingStyle.fill;
+    final underWingFill = Paint()
+      ..color = const Color(0xFFD8E6F3).withValues(alpha: fade)
+      ..style = PaintingStyle.fill;
+    final linePaint = Paint()
+      ..color = PencilPalette.bluePencil.withValues(alpha: fade)
+      ..strokeWidth = 1.7
+      ..style = PaintingStyle.stroke
+      ..strokeJoin = StrokeJoin.round;
+
+    // Nose at (+16, 0), left/right wings swept back to (-14, -10) and (-14, +10)
+    final upperWing = Path()
+      ..moveTo(16, 0)
+      ..lineTo(-14, -11)
+      ..lineTo(-9, -2)
+      ..close();
+    final centerFold = Path()
+      ..moveTo(16, 0)
+      ..lineTo(-9, -2)
+      ..lineTo(-11, 4)
+      ..close();
+    final lowerWing = Path()
+      ..moveTo(16, 0)
+      ..lineTo(-9, 1)
+      ..lineTo(-14, 11)
+      ..close();
+
+    canvas.drawPath(centerFold, underWingFill);
+    canvas.drawPath(upperWing, wingFill);
+    canvas.drawPath(lowerWing, wingFill);
+    canvas.drawPath(centerFold, linePaint);
+    canvas.drawPath(upperWing, linePaint);
+    canvas.drawPath(lowerWing, linePaint);
+
+    canvas.restore();
+  }
+
+  /// Draws a scalloped cedar-wood & colored-core pencil sharpener shaving fan!
+  void _drawCedarPencilShavingCurl(
+    Canvas canvas,
+    double r,
+    Color leadColor,
+    double alpha,
+  ) {
+    // Scalloped wood fan with colored pigment rim
+    final woodPaint = Paint()
+      ..color = const Color(0xFFEED3A2).withValues(alpha: alpha * 0.92)
+      ..style = PaintingStyle.fill;
+    final rimPaint = Paint()
+      ..color = leadColor.withValues(alpha: alpha)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.1
+      ..strokeCap = StrokeCap.round;
+    final outlinePaint = Paint()
+      ..color = PencilPalette.graphiteDark.withValues(alpha: alpha * 0.75)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1;
+
+    final fanPath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(-r * 0.75, -r * 0.45)
+      ..arcToPoint(
+        Offset(r * 0.75, -r * 0.45),
+        radius: Radius.circular(r * 0.95),
+        clockwise: true,
+      )
+      ..close();
+
+    canvas.drawPath(fanPath, woodPaint);
+    canvas.drawPath(fanPath, outlinePaint);
+
+    // Colored pencil pigment rim along the outer scalloped arc
+    final rimPath = Path()
+      ..moveTo(-r * 0.75, -r * 0.45)
+      ..arcToPoint(
+        Offset(r * 0.75, -r * 0.45),
+        radius: Radius.circular(r * 0.95),
+        clockwise: true,
+      );
+    canvas.drawPath(rimPath, rimPaint);
+  }
+
+  /// Draws a 3D Hand-Illustrated Wooden Pencil with its tip (or pink eraser if [eraserDown])
+  /// touching [targetPoint].
+  void _drawWoodenPencil(
+    Canvas canvas, {
+    required Offset targetPoint,
+    required double angleRadians,
+    required Color leadColor,
+    required bool eraserDown,
+    required double opacity,
+  }) {
+    if (opacity <= 0.01) return;
+
+    canvas.save();
+    canvas.translate(targetPoint.dx, targetPoint.dy);
+    canvas.rotate(angleRadians);
+    if (eraserDown) {
+      // Flip pencil so the pink rubber eraser is at (0, 0) touching the paper!
+      canvas.translate(0, -68);
+      canvas.scale(1.0, -1.0);
+    }
+
+    // Drop shadow on the notebook page
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.14 * opacity)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(-3, -64, 13, 62),
+        const Radius.circular(3),
+      ),
+      shadowPaint,
+    );
+
+    const halfW = 5.6;
+    const coneH = 15.0;
+    const shaftBottom = -coneH;
+    const shaftTop = -54.0;
+    const ferruleTop = -61.0;
+    const eraserTop = -69.0;
+
+    // 1. Cedar wood sharpened cone (0,0 -> (-halfW, -coneH) .. (+halfW, -coneH))
+    final conePath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(-halfW, shaftBottom)
+      ..lineTo(halfW, shaftBottom)
+      ..close();
+    final woodPaint = Paint()
+      ..color = const Color(0xFFF2D6A2).withValues(alpha: opacity)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(conePath, woodPaint);
+
+    // 2. Colored/Graphite Lead Tip (0,0 -> -5.5px)
+    final leadPath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(-halfW * 0.36, -coneH * 0.36)
+      ..lineTo(halfW * 0.36, -coneH * 0.36)
+      ..close();
+    final leadPaint = Paint()
+      ..color = leadColor.withValues(alpha: opacity)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(leadPath, leadPaint);
+
+    // 3. Hexagonal Painted Wooden Shaft (classic yellow #F6C73B with 3D facet shading)
+    final shaftPath = Path()
+      ..moveTo(-halfW, shaftBottom)
+      ..lineTo(-halfW, shaftTop)
+      ..lineTo(halfW, shaftTop)
+      ..lineTo(halfW, shaftBottom)
+      ..close();
+    final shaftPaint = Paint()
+      ..color = const Color(0xFFF6C63C).withValues(alpha: opacity)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(shaftPath, shaftPaint);
+
+    // Darker right facet on hexagonal shaft for 3D depth
+    final rightFacetPaint = Paint()
+      ..color = const Color(0xFFE0A81E).withValues(alpha: opacity)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(
+      const Rect.fromLTRB(halfW * 0.25, shaftTop, halfW, shaftBottom),
+      rightFacetPaint,
+    );
+
+    // 4. Silver Metallic Ferrule Band
+    final ferruleRect =
+        const Rect.fromLTRB(-halfW, ferruleTop, halfW, shaftTop);
+    final ferrulePaint = Paint()
+      ..color = const Color(0xFFD0D7DE).withValues(alpha: opacity)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(ferruleRect, ferrulePaint);
+
+    // 5. Pink Rubber Eraser Cap
+    final eraserRRect = RRect.fromRectAndCorners(
+      const Rect.fromLTRB(-halfW, eraserTop, halfW, ferruleTop),
+      topLeft: const Radius.circular(3.5),
+      topRight: const Radius.circular(3.5),
+    );
+    final eraserPaint = Paint()
+      ..color = const Color(0xFFF28FA0).withValues(alpha: opacity)
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(eraserRRect, eraserPaint);
+
+    // 6. Crisp hand-drawn graphite outlines & hexagonal facet ridges
+    final outlinePaint = Paint()
+      ..color = PencilPalette.graphiteDark.withValues(alpha: opacity)
+      ..strokeWidth = 1.35
+      ..style = PaintingStyle.stroke
+      ..strokeJoin = StrokeJoin.round;
+
+    canvas.drawPath(conePath, outlinePaint);
+    canvas.drawRect(
+      const Rect.fromLTRB(-halfW, shaftTop, halfW, shaftBottom),
+      outlinePaint,
+    );
+    // Hexagonal vertical ridges
+    canvas.drawLine(
+      const Offset(-halfW * 0.3, shaftBottom),
+      const Offset(-halfW * 0.3, shaftTop),
+      outlinePaint..strokeWidth = 0.9,
+    );
+    canvas.drawLine(
+      const Offset(halfW * 0.3, shaftBottom),
+      const Offset(halfW * 0.3, shaftTop),
+      outlinePaint..strokeWidth = 0.9,
+    );
+    canvas.drawRect(ferruleRect, outlinePaint..strokeWidth = 1.2);
+    canvas.drawRRect(eraserRRect, outlinePaint);
+
+    canvas.restore();
+  }
+
+  /// Draws a Chisel-Tip Fluorescent Highlighter Marker swiping across the scorecard.
+  void _drawChiselHighlighterMarker(
+    Canvas canvas, {
+    required Offset tipPoint,
+    required Color markerColor,
+    required double opacity,
+  }) {
+    if (opacity <= 0.01) return;
+    canvas.save();
+    canvas.translate(tipPoint.dx, tipPoint.dy);
+    canvas.rotate(pi * 0.18);
+
+    final tipPaint = Paint()
+      ..color = markerColor.withValues(alpha: opacity)
+      ..style = PaintingStyle.fill;
+    final bodyPaint = Paint()
+      ..color = const Color(0xFFFFF066).withValues(alpha: opacity)
+      ..style = PaintingStyle.fill;
+    final outlinePaint = Paint()
+      ..color = PencilPalette.graphiteDark.withValues(alpha: opacity * 0.85)
+      ..strokeWidth = 1.4
+      ..style = PaintingStyle.stroke;
+
+    // Slanted chisel felt nib
+    final nibPath = Path()
+      ..moveTo(0, 10)
+      ..lineTo(0, -10)
+      ..lineTo(10, -12)
+      ..lineTo(10, 8)
+      ..close();
+    canvas.drawPath(nibPath, tipPaint);
+    canvas.drawPath(nibPath, outlinePaint);
+
+    // Broad marker barrel
+    final barrelRRect = RRect.fromRectAndRadius(
+      const Rect.fromLTRB(10, -14, 54, 11),
+      const Radius.circular(4),
+    );
+    canvas.drawRRect(barrelRRect, bodyPaint);
+    canvas.drawRRect(barrelRRect, outlinePaint);
+
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant _ScoreFireworksPainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.seed != seed;
+  bool shouldRepaint(covariant _LivingPencilNotebookPainter oldDelegate) =>
+      oldDelegate.progress != progress ||
+      oldDelegate.event.eventId != event.eventId;
 }
 
 /// Pulses a summary cell (e.g. Grand Total or Upper Bonus) with a spring bounce
